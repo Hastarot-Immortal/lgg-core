@@ -1,6 +1,6 @@
 use std::fmt;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Sound {
     Consonant(char, VoiceLevel),
     Vowel(VowelSymbol),
@@ -101,7 +101,7 @@ impl PartialEq<Sound> for &str {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum VowelSymbol {
     Monophthong(char),
     Diphthong([char; 2]),
@@ -109,7 +109,7 @@ pub enum VowelSymbol {
 }
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum VoiceLevel {
     Voiceless,
     Breathy,
