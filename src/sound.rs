@@ -1,6 +1,6 @@
 use std::fmt;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Sound {
     Consonant(char, VoiceLevel),
     Vowel(VowelSymbol),
@@ -36,29 +36,72 @@ impl Sound {
 
 impl fmt::Display for Sound {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        write!(f, "{}", match *self {
-            Self::Consonant(symbol, _) => symbol.to_string(),
-            Self::Vowel(symbol) => match symbol {
-                VowelSymbol::Monophthong(sym) => sym.to_string(),
-                VowelSymbol::Diphthong(sym) => {
-                    let mut res = String::with_capacity(2);
-                    res.push(sym[0]);
-                    res.push(sym[1]);
-                    res
-                }
-                VowelSymbol::Triphthong(sym) => {
-                    let mut res = String::with_capacity(3);
-                    res.push(sym[0]);
-                    res.push(sym[1]);
-                    res.push(sym[2]);
-                    res
-                }
-            },
-        })
+        write!(
+            f,
+            "{}",
+            match *self {
+                Self::Consonant(symbol, _) => symbol.to_string(),
+                Self::Vowel(symbol) => match symbol {
+                    VowelSymbol::Monophthong(sym) => sym.to_string(),
+                    VowelSymbol::Diphthong(sym) => {
+                        let mut res = String::with_capacity(
+                            sym
+                            .iter()
+                            .map(|s| s.len_utf8())
+                            .sum());
+                        res.push(sym[0]);
+                        res.push(sym[1]);
+                        res
+                    }
+                    VowelSymbol::Triphthong(sym) => {
+                        let mut res = String::with_capacity(
+                            sym
+                            .iter()
+                            .map(|s| s.len_utf8())
+                            .sum());
+                        res.push(sym[0]);
+                        res.push(sym[1]);
+                        res.push(sym[2]);
+                        res
+                    }
+                },
+            }
+        )
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+impl PartialEq<char> for Sound {
+    fn eq(&self, other: &char) -> bool {
+        match *self {
+            Self::Consonant(symbol, _) => symbol == *other,
+            Self::Vowel(symbol) => match symbol {
+                VowelSymbol::Monophthong(sym) => sym == *other,
+                VowelSymbol::Diphthong(_) => false,
+                VowelSymbol::Triphthong(_) => false,
+            }
+        }
+    }
+}
+
+impl PartialEq<Sound> for char {
+    fn eq(&self, other: &Sound) -> bool {
+        PartialEq::eq(other, self)
+    }
+}
+
+impl PartialEq<&str> for Sound {
+    fn eq(&self, other: &&str) -> bool {
+        PartialEq::eq(&self.to_string().as_str(), other)
+    }
+}
+
+impl PartialEq<Sound> for &str {
+    fn eq(&self, other: &Sound) -> bool {
+        PartialEq::eq(&other.to_string().as_str(), self)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum VowelSymbol {
     Monophthong(char),
     Diphthong([char; 2]),
@@ -74,4 +117,27 @@ pub enum VoiceLevel {
     Voice,
     Sonorant,
     Vowel,
+}
+
+#[cfg(test)]
+mod sound_test {
+    use super::*;
+
+    #[test]
+    fn monophthong() {
+        let s = Sound::monophthong('a');
+        assert_eq!(s, 'a');
+    }
+
+    #[test]
+    fn diphthong() {
+        let s = Sound::diphthong(['e', 'a']);
+        assert_eq!(s, "ea");
+    }
+
+    #[test]
+    fn triphthong() {
+        let s = Sound::triphthong(['e', 'o', 'a']);
+        assert_eq!(s, "eoa");
+    }
 }
