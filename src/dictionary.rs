@@ -10,10 +10,10 @@ use std::{
 
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Dictionary<Key: Hash + Eq> {
-    words: HashMap<Key, Word>,
+pub struct Dictionary<I: Hash + Eq> {
+    words: HashMap<I, Word>,
     #[cfg(feature="affix")]
-    pub affixes: HashMap<Key, Affix>,
+    pub affixes: HashMap<I, Affix>,
 }
 
 impl<I> Dictionary<I>
@@ -37,20 +37,20 @@ where
     }
 }
 
-impl<Key> Deref for Dictionary<Key>
+impl<I> Deref for Dictionary<I>
 where
-    Key: Hash + Eq,
+    I: Hash + Eq,
 {
-    type Target = HashMap<Key, Word>;
+    type Target = HashMap<I, Word>;
 
     fn deref(&self) -> &Self::Target {
         &self.words
     }
 }
 
-impl<Key> DerefMut for Dictionary<Key>
+impl<I> DerefMut for Dictionary<I>
 where
-    Key: Hash + Eq,
+    I: Hash + Eq,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.words
