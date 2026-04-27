@@ -1,6 +1,4 @@
 use crate::Word;
-#[cfg(feature="affix")]
-use crate::Affix;
 
 use std::{
     collections::HashMap, 
@@ -12,8 +10,6 @@ use std::{
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Dictionary<I: Hash + Eq> {
     words: HashMap<I, Word>,
-    #[cfg(feature="affix")]
-    pub affixes: HashMap<I, Affix>,
 }
 
 impl<I> Dictionary<I>
@@ -21,19 +17,11 @@ where
     I: Hash + Eq,
 {
     pub fn new() -> Self {
-        Self {
-            words: HashMap::new(),
-            #[cfg(feature="affix")]
-            affixes: HashMap::new(),
-        }
+        Self { words: HashMap::new() }
     }
 
     pub fn with_capacity(capacity: usize) -> Self {
-        Self {
-            words: HashMap::with_capacity(capacity),
-            #[cfg(feature="affix")]
-            affixes: HashMap::new(),
-        }
+        Self { words: HashMap::with_capacity(capacity) }
     }
 }
 
