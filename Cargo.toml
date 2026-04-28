@@ -6,3 +6,4 @@ edition = "2024"
 [features]
 
 [dependencies]
+cc-traits = "2.0.0"
