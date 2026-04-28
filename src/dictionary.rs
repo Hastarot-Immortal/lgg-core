@@ -23,6 +23,9 @@ use cc_traits::{
     MapInsert,
     Remove,
     Clear,
+
+    MapIter,
+    MapIterMut,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -58,6 +61,90 @@ where
             words: HashMap::from_iter(vec.into_iter()),
             _id_type: PhantomData
         }
+    }
+}
+
+impl<I, M> Dictionary<I, M> {
+    pub fn len(&self) -> usize 
+    where
+        M: Len
+    {
+        Len::len(self)
+    }
+
+    pub fn get(&self, key: &I) -> Option<&Word> 
+    where
+        M: for<'a> Get<&'a I>,
+        for<'a> <M as CollectionRef>::ItemRef<'a>: Into<&'a Word>,
+    {
+        Get::get(self, key)
+    }
+
+    pub fn contains(&self, key: &I) -> bool
+    where
+        M: for<'a> Get<&'a I>,
+        for<'a> <M as CollectionRef>::ItemRef<'a>: Into<&'a Word>,
+    {
+        Get::contains(self, key)
+    }
+
+    pub fn get_key_value(&self, key: &I) -> Option<(&I, &Word)>
+    where
+        M: for<'a> GetKeyValue<&'a I>, 
+        for<'a> <M as CollectionRef>::ItemRef<'a>: Into<&'a Word>,
+        for<'a> <M as KeyedRef>::KeyRef<'a>: Into<&'a I>,
+    {
+        GetKeyValue::get_key_value(self, key)
+    }
+
+    pub fn get_mut(&mut self, key: &I) -> Option<&mut Word>
+    where
+        M: for<'a> GetMut<&'a I>,
+        for<'a> <M as CollectionRef>::ItemRef<'a>: Into<&'a Word>,
+        for<'a> <M as CollectionMut>::ItemMut<'a>: Into<&'a mut Word>,
+    {
+        GetMut::get_mut(self, key)
+    }
+
+    pub fn insert(&mut self, key: I, value: Word) -> Option<Word> 
+    where
+        M: MapInsert<I, Output = Option<Word>>,
+        <M as Collection>::Item: From<Word>,
+    {
+        MapInsert::insert(self, key, value)
+    }
+
+    pub fn remove(&mut self, key: &I) -> Option<Word> 
+    where
+        M: for<'a> Remove<&'a I>,
+        <M as Collection>::Item: Into<Word>,
+    {
+        Remove::remove(self, key)
+    }
+
+    pub fn clear(&mut self)
+    where
+        M: Clear
+    {
+        Clear::clear(self)
+    }
+
+    pub fn iter(&self) -> crate::DictionaryMapIter<'_, I, M>
+    where
+        M: MapIter,
+        for<'a> M::KeyRef<'a>: Into<&'a I>,
+        for<'a> M::ItemRef<'a>: Into<&'a Word>,
+    {
+        MapIter::iter(self)
+    }
+
+    pub fn iter_mut(&mut self) -> crate::DictionaryMapIterMut<'_, I, M>
+    where
+        M: MapIterMut,
+        for<'a> M::KeyRef<'a>: Into<&'a I>,
+        for<'a> M::ItemMut<'a>: Into<&'a mut Word>,
+    {
+        MapIterMut::iter_mut(self)
     }
 }
 
