@@ -304,7 +304,7 @@ mod dictionary_test {
         VoiceLevel, 
         PartOfSpeech
     };
-    use cc_traits::{Map, MapMut, MapIter, MapIterMut};
+    use cc_traits::{Map, MapMut};
 
     fn create_simple_alphabet() -> (Sound, Sound, Sound, Sound) {
         (
