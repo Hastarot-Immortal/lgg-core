@@ -2,6 +2,7 @@ use crate::Sound;
 use std::{
     fmt,
     ops::{ Deref, DerefMut, Index, IndexMut },
+    cmp::PartialEq,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -32,6 +33,39 @@ impl Word {
 
     pub fn distance_with_cost(&self, other: &Word, cost: impl OperatorCost) -> usize {
         utils::minimal_edit_distance(self, other, cost)
+    }
+
+    pub fn replace(&self, from: Sound, to: Sound) -> Word {
+        let mut res = self.clone();
+        res.replace_in_place(from, to);
+        res
+    }
+
+    pub fn replacen(&self, from: Sound, to: Sound, count: usize) -> Word {
+        let mut res = self.clone();
+        res.replacen_in_place(from, to, count);
+        res
+    }
+
+    pub fn replace_in_place(&mut self, from: Sound, to: Sound) {
+        for sound in self.iter_mut() {
+            if *sound == from {
+                *sound = to;
+            }
+        }
+    }
+
+    pub fn replacen_in_place(&mut self, from: Sound, to: Sound, count: usize) {
+        let mut i = 0;
+        for sound in self.iter_mut() {
+            if i == count {
+                break;
+            }
+            if *sound == from {
+                *sound = to;
+                i += 1;
+            }
+        }
     }
 }
 
@@ -69,6 +103,42 @@ impl fmt::Display for Word {
         .iter()
         .map(|sound| sound.to_string())
         .collect::<String>())
+    }
+}
+
+impl PartialEq<String> for Word {
+    fn eq(&self, other: &String) -> bool {
+        PartialEq::eq(&self.to_string(), other)
+    }
+}
+
+impl PartialEq<Word> for String {
+    fn eq(&self, other: &Word) -> bool {
+        PartialEq::eq(&other, &self)
+    }
+}
+
+impl PartialEq<&str> for Word {
+    fn eq(&self, other: &&str) -> bool {
+        PartialEq::eq(&self.to_string()[..], &other[..])
+    }
+}
+
+impl PartialEq<Word> for &str {
+    fn eq(&self, other: &Word) -> bool {
+        PartialEq::eq(&other, &self)
+    }
+}
+
+impl PartialEq<str> for Word {
+    fn eq(&self, other: &str) -> bool {
+        PartialEq::eq(&self.to_string()[..], &other[..])
+    }
+}
+
+impl PartialEq<Word> for str {
+    fn eq(&self, other: &Word) -> bool {
+        PartialEq::eq(&other, &self)
     }
 }
 
@@ -136,5 +206,32 @@ mod utils {
 
     fn min(first: usize, second: usize, third: usize) -> usize {
         first.min(second).min(third)
+    }
+}
+
+#[cfg(test)]
+mod word_test {
+    use super::*;
+    use crate::VoiceLevel;
+
+    #[test]
+    fn replace() {
+        let t = Sound::new('t', VoiceLevel::Voiceless);
+        let e = Sound::monophthong('e');
+        let a = Sound::monophthong('a');
+        let w = Sound::new('w', VoiceLevel::Sonorant);
+        let z = Sound::new('z', VoiceLevel::Voice);
+
+        let word1 = Word::from_slice(&[t, e, e, w, a, z], PartOfSpeech::NOUN);
+        let word2 = word1.clone();
+
+        let mut word3 = word1.replace(e, a);
+        let mut word4 = word2.replacen(e, a, 1);
+    
+        word3.replace_in_place(a, e);
+        word4.replacen_in_place(a, e, 1);
+
+        assert_eq!(word3, "teewez");
+        assert_eq!(word4, word2);
     }
 }
