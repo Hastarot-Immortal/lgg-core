@@ -87,15 +87,15 @@ where
     }
 }
 
-pub trait LanguageBuilder<I: Hash + Eq> {
+pub trait LanguageBuilder<I, M> {
     fn new() -> Self;
     fn rules(self, rules: Vec<Box<dyn Rule>>) -> Self;
-    fn build(&mut self, words: Vec<(I, PartOfSpeech)>) -> Language<I>;
-    fn add_words(&mut self, language: &mut Language<I>, words: Vec<(I, PartOfSpeech)>);
-    fn transform(&self, language: &mut Language<I>);
+    fn build(&mut self, words: Vec<(I, PartOfSpeech)>) -> Language<I, M>;
+    fn add_words(&mut self, language: &mut Language<I, M>, words: Vec<(I, PartOfSpeech)>);
+    fn transform(&self, language: &mut Language<I, M>);
 }
 
-pub trait RandomLanguageBuilder<I: Hash + Eq>: LanguageBuilder<I> {
+pub trait RandomLanguageBuilder<I, M>: LanguageBuilder<I, M> {
 	type Seed;
 	fn seed(self, seed: Self::Seed) -> Self;
 }
