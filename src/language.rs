@@ -1,13 +1,12 @@
-use crate::{Dictionary, PartOfSpeech, Rule, Word};
+use crate::{Dictionary, PartOfSpeech, Rule, Word, collections::FastMap };
 
 use std::{
     hash::Hash,
-    collections::HashMap,
     ops::{Deref, DerefMut},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Language<I, M=HashMap<I, Word>> {
+pub struct Language<I, M=FastMap<I, Word>> {
 	dictionary: Dictionary<I, M>,
 }
 

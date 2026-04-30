@@ -1,8 +1,10 @@
-use crate::Word;
+use crate::{
+    Word,
+    collections::FastMap,
+};
 
 use std::{
     hash::Hash,
-    collections::HashMap,
     marker::PhantomData
 };
 
@@ -29,7 +31,7 @@ use cc_traits::{
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Dictionary<I, M = HashMap<I, Word>> {
+pub struct Dictionary<I, M = FastMap<I, Word>> {
     pub(crate) words: M,
     _id_type: PhantomData<I>,
 }
@@ -40,14 +42,14 @@ where
 {
     pub fn new() -> Self {
         Self { 
-            words: HashMap::new(), 
+            words: FastMap::new(), 
             _id_type: PhantomData
         }
     }
 
     pub fn with_capacity(capacity: usize) -> Self {
         Self { 
-            words: HashMap::with_capacity(capacity), 
+            words: FastMap::with_capacity(capacity), 
             _id_type: PhantomData
         }
     }
@@ -58,7 +60,7 @@ where
 
     pub fn from_vec(vec: Vec<(I, Word)>) -> Self {
         Self {
-            words: HashMap::from_iter(vec.into_iter()),
+            words: FastMap::from_iter(vec.into_iter()),
             _id_type: PhantomData
         }
     }
@@ -368,7 +370,7 @@ mod dictionary_test {
             (1i8, Word::from_slice(&[s, a, m], PartOfSpeech::CONJ)),
         ];
 
-        let dict: Dictionary<i8, HashMap<i8, Word>> = Dictionary::from_iter(vec);
+        let dict: Dictionary<i8, FastMap<i8, Word>> = Dictionary::from_iter(vec);
         assert_eq!(dict.get(&-1).map(|word: &Word| word.to_string()), Some("mav".to_string()))
     }
 
@@ -399,11 +401,11 @@ mod dictionary_test {
     }
 
     #[test]
-    fn iter_mut() {
+    fn words_mut() {
         let (s, a, m, v) = create_simple_alphabet();
         let mut dict = Dictionary::new();
         dict.insert(1, Word::from_slice(&[m, a, s, s], PartOfSpeech::NOUN));
-        for (_, w) in dict.iter_mut() {
+        for w in dict.words_mut() {
             w.push(v);
         }
         let mut iter = dict.iter();

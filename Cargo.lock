@@ -9,8 +9,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "060303ef31ef4a522737e1b1ab68c67916f2a787bb2f4f54f383279adba962b5"
 
 [[package]]
+name = "foldhash"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
+
+[[package]]
 name = "lgg-core"
 version = "0.1.0"
 dependencies = [
  "cc-traits",
+ "foldhash",
 ]

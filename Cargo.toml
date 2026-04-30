@@ -7,3 +7,4 @@ edition = "2024"
 
 [dependencies]
 cc-traits = "2.0.0"
+foldhash = "0.2.0"
