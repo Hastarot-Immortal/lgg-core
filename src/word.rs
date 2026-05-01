@@ -23,6 +23,13 @@ impl Word {
         }
     }
 
+    pub fn from_array<const N: usize>(sounds: [Sound; N], pos: PartOfSpeech) -> Self {
+        Self { 
+            sounds: Vec::from(sounds),
+            pos,
+        }
+    }
+
     pub fn pos(&self) -> PartOfSpeech {
         self.pos
     }
@@ -35,37 +42,71 @@ impl Word {
         utils::minimal_edit_distance(self, other, cost)
     }
 
-    pub fn replace(&self, from: Sound, to: Sound) -> Word {
+    pub fn replace<F, T>(&self, from: &F, to: &T) -> Word 
+    where
+        F: PartialEq<Sound>,
+        T: Into<Sound> + Clone,
+    {
         let mut res = self.clone();
         res.replace_in_place(from, to);
         res
     }
 
-    pub fn replacen(&self, from: Sound, to: Sound, count: usize) -> Word {
+    pub fn replacen<F, T>(&self, from: &F, to: &T, count: usize) -> Word 
+    where
+        F: PartialEq<Sound>,
+        T: Into<Sound> + Clone,
+    {
         let mut res = self.clone();
         res.replacen_in_place(from, to, count);
         res
     }
 
-    pub fn replace_in_place(&mut self, from: Sound, to: Sound) {
+    pub fn replace_in_place<F, T>(&mut self, from: &F, to: &T) 
+    where
+        F: PartialEq<Sound>,
+        T: Into<Sound> + Clone,
+    {
         for sound in self.iter_mut() {
-            if *sound == from {
-                *sound = to;
+            if from == sound {
+                *sound = to.clone().into();
             }
         }
     }
 
-    pub fn replacen_in_place(&mut self, from: Sound, to: Sound, count: usize) {
+    pub fn replacen_in_place<F, T>(&mut self, from: &F, to: &T, count: usize) 
+    where
+        F: PartialEq<Sound>,
+        T: Into<Sound> + Clone,
+    {
         let mut i = 0;
         for sound in self.iter_mut() {
             if i == count {
                 break;
             }
-            if *sound == from {
-                *sound = to;
+            if from == sound{
+                *sound = to.clone().into();
                 i += 1;
             }
         }
+    }
+}
+
+impl From<(Vec<Sound>, PartOfSpeech)> for Word {
+    fn from(word: (Vec<Sound>, PartOfSpeech)) -> Self {
+        Self::from_vec(word.0, word.1)
+    }
+}
+
+impl From<(&[Sound], PartOfSpeech)> for Word {
+    fn from(word: (&[Sound], PartOfSpeech)) -> Self {
+        Self::from_slice(word.0, word.1)
+    }
+}
+
+impl<const N: usize> From<([Sound; N], PartOfSpeech)> for Word {
+    fn from(word: ([Sound; N], PartOfSpeech)) -> Self {
+        Self::from_array(word.0, word.1)
     }
 }
 
@@ -222,14 +263,14 @@ mod word_test {
         let w = Sound::new('w', VoiceLevel::Sonorant);
         let z = Sound::new('z', VoiceLevel::Voice);
 
-        let word1 = Word::from_slice(&[t, e, e, w, a, z], PartOfSpeech::NOUN);
+        let word1 = Word::from(([t, e, e, w, a, z], PartOfSpeech::NOUN));
         let word2 = word1.clone();
 
-        let mut word3 = word1.replace(e, a);
-        let mut word4 = word2.replacen(e, a, 1);
+        let mut word3 = word1.replace(&e, &a);
+        let mut word4 = word2.replacen(&e, &a, 1);
     
-        word3.replace_in_place(a, e);
-        word4.replacen_in_place(a, e, 1);
+        word3.replace_in_place(&'a', &('e', VoiceLevel::Vowel));
+        word4.replacen_in_place(&"a", &e, 1);
 
         assert_eq!(word3, "teewez");
         assert_eq!(word4, word2);

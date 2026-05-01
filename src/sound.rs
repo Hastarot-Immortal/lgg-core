@@ -34,6 +34,24 @@ impl Sound {
     }
 }
 
+impl From<(char, VoiceLevel)> for Sound {
+    fn from(sound: (char, VoiceLevel)) -> Self {
+        Self::new(sound.0, sound.1)
+    }
+}
+
+impl From<[char; 2]> for Sound {
+    fn from(sound: [char; 2]) -> Self {
+        Self::diphthong(sound)
+    }
+}
+
+impl From<[char; 3]> for Sound {
+    fn from(sound: [char; 3]) -> Self {
+        Self::triphthong(sound)
+    }
+}
+
 impl fmt::Display for Sound {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         write!(
