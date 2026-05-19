@@ -5,6 +5,7 @@ pub mod dictionary_iter;
 pub mod language;
 pub mod rule;
 pub mod collections;
+pub mod alphabet;
 
 pub use sound::{ Sound, VoiceLevel };
 pub use word::{ Word, PartOfSpeech };
