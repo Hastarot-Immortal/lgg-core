@@ -1,28 +1,46 @@
-use crate::{ Sound, sound::VowelSymbol };
+use crate::{
+    alphabet::{
+        iter::Indexes,
+        index::{AlphabetIndex, AlphabetIndexOwned},
+        key::{AsKey, AlphabetKey},
+    },
+    Sound,
+};
 use std::ops::Index;
 
 #[derive(Debug, Clone)]
-struct AlphabetUnit {
-    key: [char; 3],
-    sound: Sound,
+pub(super) struct AlphabetUnit {
+    key: AlphabetKey,
+    pub(super) sound: Sound,
     left: Option<usize>,
     right: Option<usize>,
 }
 
-impl From<avl::AVLNode> for AlphabetUnit {
-    fn from(node: avl::AVLNode) -> Self {
-        Self {
-            key: node.key,
-            sound: node.value,
-            left: node.left,
-            right: node.right,
-        }
-    }
+pub struct Alphabet {
+    pub(super) storage: Vec<AlphabetUnit>,
+    root: Option<usize>,
 }
 
-pub struct Alphabet {
-    storage: Vec<AlphabetUnit>,
-    root: Option<usize>,
+impl FromIterator<Sound> for Alphabet {
+    fn from_iter<T: IntoIterator<Item = Sound>>(sounds: T) -> Self {
+        let mut storage = Vec::new();
+        let mut root = None;
+        for sound in sounds {
+            root = Some(avl::insert(sound, &mut storage, root));
+        }
+        Self {
+            storage: storage
+                .into_iter()
+                .map(|node| AlphabetUnit {
+                    key: node.key,
+                    sound: node.value,
+                    left: node.left,
+                    right: node.right,
+                })
+                .collect(),
+            root,
+        }
+    }
 }
 
 impl<const N: usize> From<[Sound; N]> for Alphabet {
@@ -37,108 +55,61 @@ impl From<Vec<Sound>> for Alphabet {
     }
 }
 
-impl FromIterator<Sound> for Alphabet {
-    fn from_iter<T: IntoIterator<Item = Sound>>(sounds: T) -> Self {
-        let mut storage = Vec::new();
-        let mut root = None;
-        for sound in sounds {
-            root = Some(avl::insert(sound, &mut storage, root));
-        }
-        Self {
-            storage: storage
-                .into_iter()
-                .map(|node| AlphabetUnit::from(node))
-                .collect(),
-            root,
-        }
-    }
-}
-
-impl IntoIterator for Alphabet {
-    type Item = Sound;
-
-    type IntoIter = std::vec::IntoIter<Sound>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        let sounds: Vec<Sound> = self.as_vec();
-        sounds.into_iter()
-    }
-}
-
 impl Alphabet {
-    pub fn get<K: AlphabetKey>(&self, key: &K) -> Option<Sound> {
-        avl::search(&self.storage, self.root, &key.as_key())
+    pub fn get<I: AlphabetIndex>(&self, idx: I) -> Option<&I::Output> {
+        idx.get(self)
     }
 
-    pub fn as_vec(&self) -> Vec<Sound> {
-        self.storage.clone().into_iter().map(|s| s.sound).collect()
+    pub fn get_owned<I: AlphabetIndexOwned>(&self, idx: I) -> Option<I::Owned> {
+        idx.get_owned(self)
     }
-}
 
-impl Index<usize> for Alphabet {
-    type Output = Sound;
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.storage[index].sound
+    pub fn len(&self) -> usize {
+        self.storage.len()
     }
-}
 
-pub trait AlphabetKey {
-    fn as_key(&self) -> [char; 3];
-}
+    pub fn indexes(&self) -> Indexes {
+        Indexes {
+            inner: (0..self.len()).collect(),
+        }
+    }
 
-impl AlphabetKey for Sound {
-    fn as_key(&self) -> [char; 3] {
-        match *self {
-            Sound::Consonant(ch, _) => ch.as_key(),
-            Sound::Vowel(vowel_symbol) => match vowel_symbol {
-                VowelSymbol::Monophthong(ch) => ch.as_key(),
-                VowelSymbol::Diphthong(ch) => ch.as_key(),
-                VowelSymbol::Triphthong(ch) => ch.as_key(),
-            },
+    pub fn indexes_by<F: Fn(&Sound) -> bool>(&self, f: F) -> Indexes {
+        Indexes {
+            inner: self
+                .storage
+                .iter()
+                .enumerate()
+                .filter_map(|(i, u)| if f(&u.sound) { Some(i) } else { None })
+                .collect(),
         }
     }
 }
 
-impl AlphabetKey for char {
-    fn as_key(&self) -> [char; 3] {
-        [*self, '\0', '\0']
+impl<I> Index<I> for Alphabet 
+where
+    I: AlphabetIndex
+{
+    type Output = I::Output;
+    fn index(&self, idx: I) -> &Self::Output {
+        idx.index(self)
     }
 }
 
-impl AlphabetKey for [char; 2] {
-    fn as_key(&self) -> [char; 3] {
-        [self[0], self[1], '\0']
-    }
-}
-
-impl AlphabetKey for [char; 3] {
-    fn as_key(&self) -> [char; 3] {
-        *self
-    }
-}
-
-impl AlphabetKey for &str {
-    fn as_key(&self) -> [char; 3] {
-        let mut res = ['\0'; 3];
-        let iter = self.chars().take(3).enumerate();
-        for (i, c) in iter {
-            res[i] = c;
-        }
-        res
-    }
+pub(super) fn search<K: AsKey>(alphabet: &Alphabet, key: K) -> Option<&Sound> {
+    avl::search(&alphabet.storage, alphabet.root, key.as_key())
 }
 
 mod avl {
-    use crate::Sound;
-    use super::{ AlphabetUnit, AlphabetKey };
+    use super::*;
     use std::cmp::Ordering;
 
     #[derive(Debug)]
-    pub struct AVLNode {
-        pub key: [char; 3],
-        pub value: Sound,
-        pub left: Option<usize>,
-        pub right: Option<usize>,
+    pub(super) struct AVLNode {
+        pub(crate) key: AlphabetKey,
+        pub(crate) value: Sound,
+        pub(crate) left: Option<usize>,
+        pub(crate) right: Option<usize>,
         height: i8,
     }
 
@@ -160,10 +131,14 @@ mod avl {
         }
     }
 
-    pub(super) fn search(storage: &Vec<AlphabetUnit>, idx: Option<usize>, key: &[char; 3]) -> Option<Sound> {
+    pub(super) fn search(
+        storage: &Vec<AlphabetUnit>,
+        idx: Option<usize>,
+        key: AlphabetKey,
+    ) -> Option<&Sound> {
         if let Some(idx) = idx {
-            match Ord::cmp(&storage[idx].key, key) {
-                Ordering::Equal => Some(storage[idx].sound),
+            match Ord::cmp(&storage[idx].key, &key) {
+                Ordering::Equal => Some(&storage[idx].sound),
                 Ordering::Less => search(storage, storage[idx].right, key),
                 Ordering::Greater => search(storage, storage[idx].left, key),
             }
