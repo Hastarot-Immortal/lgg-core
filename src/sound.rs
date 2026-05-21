@@ -26,6 +26,26 @@ impl Sound {
         Self::Vowel(VowelSymbol::Triphthong(symbol))
     }
 
+    pub fn sonorant(symbol: char) -> Self {
+        Self::new(symbol, VoiceLevel::Sonorant)
+    }
+
+    pub fn voice(symbol: char) -> Self {
+        Self::new(symbol, VoiceLevel::Voice)
+    }
+
+    pub fn creaky(symbol: char) -> Self {
+        Self::new(symbol, VoiceLevel::Creaky)
+    }
+
+    pub fn breathy(symbol: char) -> Self {
+        Self::new(symbol, VoiceLevel::Breathy)
+    }
+
+    pub fn voiceless(symbol: char) -> Self {
+        Self::new(symbol, VoiceLevel::Voiceless)
+    }
+
     pub fn voice_level(&self) -> VoiceLevel {
         match *self {
             Self::Consonant(_, level) => level,

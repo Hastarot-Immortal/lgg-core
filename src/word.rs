@@ -38,7 +38,7 @@ impl Word {
         utils::minimal_edit_distance(&self, &other, utils::DefaultCost)
     }
 
-    pub fn distance_with_cost(&self, other: &Word, cost: impl OperatorCost) -> usize {
+    pub fn distance_with_cost(&self, other: &Word, cost: impl DistanceCost) -> usize {
         utils::minimal_edit_distance(self, other, cost)
     }
 
@@ -198,7 +198,7 @@ pub enum PartOfSpeech {
     PART
 }
 
-pub trait OperatorCost: Copy + Clone {
+pub trait DistanceCost {
     fn insert(&self) -> usize { 1 }
     fn delete(&self) -> usize { 1 }
     fn substitution(&self, first: &Sound, second: &Sound) -> usize {
@@ -212,12 +212,12 @@ mod utils {
     #[derive(Clone, Copy)]
     pub(super) struct DefaultCost;
 
-    impl OperatorCost for DefaultCost {}
+    impl DistanceCost for DefaultCost {}
 
     pub(super) fn minimal_edit_distance(
         first: &Word,
         second: &Word,
-        cost: impl OperatorCost,
+        cost: impl DistanceCost,
     ) -> usize {
         let first_len = first.len();
         let second_len = second.len();
