@@ -63,12 +63,12 @@ where
 	}
 }
 
-pub struct DictionaryMapIter<'a, I: 'a, M: MapIter + 'a> {
+pub struct DictIter<'a, I: 'a, M: MapIter + 'a> {
 	inner: M::Iter<'a>,
 	_id_type: PhantomData<I>,
 }
 
-impl<'a, I, M> Iterator for DictionaryMapIter<'a, I, M>
+impl<'a, I, M> Iterator for DictIter<'a, I, M>
 where
 	I: 'a,
 	M: MapIter + 'a,
@@ -88,22 +88,22 @@ where
 	for<'a> M::KeyRef<'a>: Into<&'a I>,
     for<'a> M::ItemRef<'a>: Into<&'a Word>,
 {
-	type Iter<'a> = DictionaryMapIter<'a, I, M> where Self: 'a, M: 'a;
+	type Iter<'a> = DictIter<'a, I, M> where Self: 'a, M: 'a;
 
 	fn iter(&self) -> Self::Iter<'_> {
-		DictionaryMapIter {
+		DictIter {
 			inner: self.words.iter(),
 			_id_type: PhantomData,
 		}
 	}
 }
 
-pub struct DictionaryMapIterMut<'a, I: 'a, M: MapIterMut + 'a> {
+pub struct DictIterMut<'a, I: 'a, M: MapIterMut + 'a> {
 	inner: M::IterMut<'a>,
 	_id_type: PhantomData<I>,
 }
 
-impl<'a, I, M> Iterator for DictionaryMapIterMut<'a, I, M>
+impl<'a, I, M> Iterator for DictIterMut<'a, I, M>
 where
 	I: 'a,
 	M: MapIterMut + 'a,
@@ -123,10 +123,10 @@ where
 	for<'a> M::KeyRef<'a>: Into<&'a I>,
     for<'a> M::ItemMut<'a>: Into<&'a mut Word>,
 {
-	type IterMut<'a> = DictionaryMapIterMut<'a, I, M> where Self: 'a, M: 'a;
+	type IterMut<'a> = DictIterMut<'a, I, M> where Self: 'a, M: 'a;
 
 	fn iter_mut(&mut self) -> Self::IterMut<'_> {
-		DictionaryMapIterMut {
+		DictIterMut {
 			inner: self.words.iter_mut(),
 			_id_type: PhantomData,
 		}
