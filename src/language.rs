@@ -32,7 +32,7 @@ where
 
     pub fn from_vec(vec: Vec<(I, Word)>) -> Self {
         Self {
-            dictionary: Dictionary::from_iter(vec.into_iter()),
+            dictionary: Dictionary::from_iter(vec),
         }
     }
 }
@@ -66,44 +66,48 @@ where
     }
 }
 
-impl<I> Deref for Language<I>
-where
-    I: Hash + Eq,
-{
-    type Target = Dictionary<I>;
+impl<I, M> Deref for Language<I, M> {
+    type Target = Dictionary<I, M>;
 
     fn deref(&self) -> &Self::Target {
         &self.dictionary
     }
 }
 
-impl<I> DerefMut for Language<I>
-where
-    I: Hash + Eq,
-{
+impl<I, M> DerefMut for Language<I, M> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.dictionary
     }
 }
 
-pub trait LanguageBuilder<I, M> {
+pub trait LanguageBuilder<I, M=FastMap<I, Word>> {
     fn new() -> Self;
     fn rules(self, rules: Vec<Box<dyn Rule>>) -> Self;
     fn build(&mut self, words: Vec<(I, PartOfSpeech)>) -> Language<I, M>;
-    fn add_words(&mut self, language: &mut Language<I, M>, words: Vec<(I, PartOfSpeech)>);
-    fn transform(&self, language: &mut Language<I, M>);
+    
 }
 
-pub trait RandomLanguageBuilder<I, M>: LanguageBuilder<I, M> {
+pub trait RandomLanguageBuilder<I, M=FastMap<I, Word>>: LanguageBuilder<I, M> {
 	type Seed;
 	fn seed(self, seed: Self::Seed) -> Self;
+}
+
+pub trait LanguageExtender<I, M=FastMap<I, Word>> {
+    fn extend(&mut self, language: &mut Language<I, M>, words: I)
+    where
+        I: IntoIterator<Item=(I, Word)>;
+}
+
+pub trait LanguageTransformer<I, M=FastMap<I, Word>> {
+    fn transform(&mut self, language: &mut Language<I, M>);
+    fn transform_new<T, N>(&mut self, language: &Language<I, M>) -> Language<T, N>;
 }
 
 #[cfg(test)]
 mod language_test {
     use super::*;
     use crate::{ 
-        Sound, 
+        Sound,
         VoiceLevel,
     };
 
