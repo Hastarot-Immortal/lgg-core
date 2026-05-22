@@ -4,6 +4,7 @@ pub mod dictionary;
 pub mod language;
 pub mod rule;
 pub mod collections;
+#[cfg(feature="alphabet")]
 pub mod alphabet;
 
 pub use sound::{Sound, VoiceLevel};
