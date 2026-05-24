@@ -80,27 +80,27 @@ impl<I, M> DerefMut for Language<I, M> {
     }
 }
 
-pub trait LanguageBuilder<I, M=FastMap<I, Word>> {
+pub trait LanguageBuilder<T, M=FastMap<T, Word>> {
     fn new() -> Self;
-    fn rules(self, rules: Vec<Box<dyn Rule>>) -> Self;
-    fn build(&mut self, words: Vec<(I, PartOfSpeech)>) -> Language<I, M>;
-    
+    fn build<I: IntoIterator<Item=(T, PartOfSpeech)>>(&mut self, words: I) -> Language<T, M>;
 }
 
-pub trait RandomLanguageBuilder<I, M=FastMap<I, Word>>: LanguageBuilder<I, M> {
+pub trait RuleBasedLanguageBuilder {
+    fn rules<I: IntoIterator<Item=Box<dyn Rule>>>(self, rules: I) -> Self;
+}
+
+pub trait RandomLanguageBuilder {
 	type Seed;
 	fn seed(self, seed: Self::Seed) -> Self;
 }
 
-pub trait LanguageExtender<I, M=FastMap<I, Word>> {
-    fn extend(&mut self, language: &mut Language<I, M>, words: I)
-    where
-        I: IntoIterator<Item=(I, Word)>;
+pub trait LanguageExtender<T, M=FastMap<T, Word>> {
+    fn extend<I: IntoIterator<Item=(T, Word)>>(&mut self, language: &mut Language<T, M>, words: I);
 }
 
 pub trait LanguageTransformer<I, M=FastMap<I, Word>> {
     fn transform(&mut self, language: &mut Language<I, M>);
-    fn transform_new<T, N>(&mut self, language: &Language<I, M>) -> Language<T, N>;
+    fn transform_create<T, N>(&mut self, language: &Language<I, M>) -> Language<T, N>;
 }
 
 #[cfg(test)]
