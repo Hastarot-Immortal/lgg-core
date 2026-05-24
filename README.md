@@ -1,2 +1,0 @@
-# Motivation
-The current implementation of `Sound` has a memory size of 12 bytes. To reduce our memory footprint, we are restructuring the type to shrink it to 7 bytes (6 bytes for `[u8; 6]` and 1 byte for `VoiceLevel`).
