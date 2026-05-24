@@ -1,149 +1,134 @@
-use std::fmt;
+use std::fmt::{Display, Formatter, Error as FmtError};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Sound {
-    Consonant(char, VoiceLevel),
-    Vowel(VowelSymbol),
+pub struct Sound {
+    bytes: [u8; 6],
+    level: VoiceLevel,
 }
 
 impl Sound {
-    pub fn new(symbol: char, level: VoiceLevel) -> Self {
-        match level {
-            VoiceLevel::Vowel => Self::monophthong(symbol),
-            _ => Self::Consonant(symbol, level),
+    pub fn from<I: AsSound>(symbol: I, level: VoiceLevel) -> Self {
+        Self {
+            bytes: symbol.as_sound(),
+            level,
         }
     }
 
-    pub fn monophthong(symbol: char) -> Self {
-        Self::Vowel(VowelSymbol::Monophthong(symbol))
+    pub fn try_from<I: TryAsSound>(symbol: I, level: VoiceLevel) -> Result<Self, TryAsSoundError> {
+        Ok(Self {
+            bytes: symbol.try_as_sound()?,
+            level,
+        })
     }
 
-    pub fn diphthong(symbol: [char; 2]) -> Self {
-        Self::Vowel(VowelSymbol::Diphthong(symbol))
+    pub fn vowel<I: AsSound>(symbol: I) -> Self {
+        Self::from(symbol, VoiceLevel::Vowel)
     }
 
-    pub fn triphthong(symbol: [char; 3]) -> Self {
-        Self::Vowel(VowelSymbol::Triphthong(symbol))
+    pub fn try_vowel<I: TryAsSound>(symbol: I) -> Result<Self, TryAsSoundError> {
+        Self::try_from(symbol, VoiceLevel::Vowel)
     }
 
-    pub fn sonorant(symbol: char) -> Self {
-        Self::new(symbol, VoiceLevel::Sonorant)
+    pub fn sonorant<I: AsSound>(symbol: I) -> Self {
+        Self::from(symbol, VoiceLevel::Sonorant)
     }
 
-    pub fn voice(symbol: char) -> Self {
-        Self::new(symbol, VoiceLevel::Voice)
+    pub fn try_sonorant<I: TryAsSound>(symbol: I) -> Result<Self, TryAsSoundError> {
+        Self::try_from(symbol, VoiceLevel::Sonorant)
     }
 
-    pub fn creaky(symbol: char) -> Self {
-        Self::new(symbol, VoiceLevel::Creaky)
+    pub fn voice<I: AsSound>(symbol: I) -> Self {
+        Self::from(symbol, VoiceLevel::Voice)
     }
 
-    pub fn breathy(symbol: char) -> Self {
-        Self::new(symbol, VoiceLevel::Breathy)
+    pub fn try_voice<I: TryAsSound>(symbol: I) -> Result<Self, TryAsSoundError> {
+        Self::try_from(symbol, VoiceLevel::Voice)
     }
 
-    pub fn voiceless(symbol: char) -> Self {
-        Self::new(symbol, VoiceLevel::Voiceless)
+    pub fn creaky<I: AsSound>(symbol: I) -> Self {
+        Self::from(symbol, VoiceLevel::Creaky)
+    }
+
+    pub fn try_creaky<I: TryAsSound>(symbol: I) -> Result<Self, TryAsSoundError> {
+        Self::try_from(symbol, VoiceLevel::Creaky)
+    }
+
+    pub fn breathy<I: AsSound>(symbol: I) -> Self {
+        Self::from(symbol, VoiceLevel::Breathy)
+    }
+
+    pub fn try_breathy<I: TryAsSound>(symbol: I) -> Result<Self, TryAsSoundError> {
+        Self::try_from(symbol, VoiceLevel::Breathy)
+    }
+
+    pub fn voiceless<I: AsSound>(symbol: I) -> Self {
+        Self::from(symbol, VoiceLevel::Voiceless)
+    }
+
+    pub fn try_voiceless<I: TryAsSound>(symbol: I) -> Result<Self, TryAsSoundError> {
+        Self::try_from(symbol, VoiceLevel::Voiceless)
     }
 
     pub fn voice_level(&self) -> VoiceLevel {
-        match *self {
-            Self::Consonant(_, level) => level,
-            Self::Vowel(_) => VoiceLevel::Vowel,
+        self.level
+    }
+}
+
+impl<I> TryFrom<(I, VoiceLevel)> for Sound 
+where
+    I: TryAsSound,
+{
+    type Error = TryAsSoundError;
+
+    fn try_from(value: (I, VoiceLevel)) -> Result<Self, Self::Error> {
+        Self::try_from(value.0, value.1)
+    }
+}
+
+impl<I> PartialEq<I> for Sound 
+where
+    I: TryAsSound,
+{
+    fn eq(&self, other: &I) -> bool {
+        other.try_as_sound().is_ok_and(|bytes| bytes == self.bytes)
+    }
+}
+
+macro_rules! impl_partial_eq {
+    ($other:ty) => {
+        impl PartialEq<Sound> for $other {
+            fn eq(&self, other: &Sound) -> bool {
+                self.try_as_sound().is_ok_and(|bytes| bytes == other.bytes)
+            }
         }
-    }
+
+        impl PartialEq<Sound> for &$other {
+            fn eq(&self, other: &Sound) -> bool {
+                PartialEq::eq(*self, other)
+            }
+        }
+    };
 }
 
-impl From<(char, VoiceLevel)> for Sound {
-    fn from(sound: (char, VoiceLevel)) -> Self {
-        Self::new(sound.0, sound.1)
-    }
-}
+impl_partial_eq!(char);
+impl_partial_eq!(str);
+impl_partial_eq!([char]);
+impl_partial_eq!([char; 1]);
+impl_partial_eq!([char; 2]);
+impl_partial_eq!([char; 3]);
+impl_partial_eq!(String);
 
-impl From<[char; 2]> for Sound {
-    fn from(sound: [char; 2]) -> Self {
-        Self::diphthong(sound)
-    }
-}
-
-impl From<[char; 3]> for Sound {
-    fn from(sound: [char; 3]) -> Self {
-        Self::triphthong(sound)
-    }
-}
-
-impl fmt::Display for Sound {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+impl Display for Sound {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
         write!(
             f,
             "{}",
-            match *self {
-                Self::Consonant(symbol, _) => symbol.to_string(),
-                Self::Vowel(symbol) => match symbol {
-                    VowelSymbol::Monophthong(sym) => sym.to_string(),
-                    VowelSymbol::Diphthong(sym) => {
-                        let mut res = String::with_capacity(
-                            sym
-                            .iter()
-                            .map(|s| s.len_utf8())
-                            .sum());
-                        res.push(sym[0]);
-                        res.push(sym[1]);
-                        res
-                    }
-                    VowelSymbol::Triphthong(sym) => {
-                        let mut res = String::with_capacity(
-                            sym
-                            .iter()
-                            .map(|s| s.len_utf8())
-                            .sum());
-                        res.push(sym[0]);
-                        res.push(sym[1]);
-                        res.push(sym[2]);
-                        res
-                    }
-                },
+            match str::from_utf8(&self.bytes) {
+                Ok(s) => s.trim_end_matches('\0'),
+                Err(_) => "invalid symbol to display",
             }
         )
     }
-}
-
-impl PartialEq<char> for Sound {
-    fn eq(&self, other: &char) -> bool {
-        match *self {
-            Self::Consonant(symbol, _) => symbol == *other,
-            Self::Vowel(symbol) => match symbol {
-                VowelSymbol::Monophthong(sym) => sym == *other,
-                VowelSymbol::Diphthong(_) => false,
-                VowelSymbol::Triphthong(_) => false,
-            }
-        }
-    }
-}
-
-impl PartialEq<Sound> for char {
-    fn eq(&self, other: &Sound) -> bool {
-        PartialEq::eq(other, self)
-    }
-}
-
-impl PartialEq<&str> for Sound {
-    fn eq(&self, other: &&str) -> bool {
-        PartialEq::eq(&self.to_string().as_str(), other)
-    }
-}
-
-impl PartialEq<Sound> for &str {
-    fn eq(&self, other: &Sound) -> bool {
-        PartialEq::eq(&other.to_string().as_str(), self)
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum VowelSymbol {
-    Monophthong(char),
-    Diphthong([char; 2]),
-    Triphthong([char; 3]),
 }
 
 #[repr(u8)]
@@ -157,25 +142,128 @@ pub enum VoiceLevel {
     Vowel,
 }
 
+pub trait AsSound {
+    fn as_sound(&self) -> [u8; 6];
+}
+
+impl AsSound for char {
+    fn as_sound(&self) -> [u8; 6] {
+        let mut res = [0; 6];
+        for (i, b) in self.encode_utf8(&mut [0; 4]).bytes().enumerate() {
+            res[i] = b
+        }
+        res
+    }
+}
+
+pub trait TryAsSound {
+    fn try_as_sound(&self) -> Result<[u8; 6], TryAsSoundError>; 
+}
+
+impl<I> TryAsSound for I
+where
+    I: AsSound,
+{
+    fn try_as_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
+        Ok(self.as_sound())
+    }
+}
+
+impl TryAsSound for str {
+    fn try_as_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
+        (&self).try_as_sound()
+    }
+}
+
+impl TryAsSound for &str {
+    fn try_as_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
+        if self.len() > 6 {
+            return Err(TryAsSoundError);
+        }
+        let mut res = [0; 6];
+        for (i, b) in self.bytes().enumerate() {
+            res[i] = b;
+        }
+        Ok(res)
+    }
+}
+
+impl TryAsSound for [char] {
+    fn try_as_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
+        (&self).try_as_sound()
+    }
+}
+
+impl TryAsSound for &[char] {
+    fn try_as_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
+        self.iter().collect::<String>().try_as_sound()
+    }
+}
+
+impl TryAsSound for String {
+    fn try_as_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
+        self.as_str().try_as_sound()
+    }
+}
+
+macro_rules! impl_try_as_sound_for_array {
+    ($($size: literal),*) => {
+        $(
+            impl TryAsSound for [char; $size] {
+                fn try_as_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
+                    self.as_slice().try_as_sound()
+                }
+            }
+
+            impl TryAsSound for &[char; $size] {
+                fn try_as_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
+                    self.as_slice().try_as_sound()
+                }
+            }
+        )*
+    };
+}
+
+impl_try_as_sound_for_array!(1, 2, 3);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct TryAsSoundError;
+
+impl Display for TryAsSoundError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
+        write!(f, "this is too big to convert into Sound")
+    }
+}
+
+impl std::error::Error for TryAsSoundError {}
+
 #[cfg(test)]
 mod sound_test {
     use super::*;
 
     #[test]
-    fn monophthong() {
-        let s = Sound::monophthong('a');
-        assert_eq!(s, 'a');
+    fn from_char() {
+        let sound = Sound::vowel('a');
+        assert_eq!(sound, 'a');
+        assert_eq!("a", sound);
+        assert_eq!(['a'], sound);
     }
 
     #[test]
-    fn diphthong() {
-        let s = Sound::diphthong(['e', 'a']);
-        assert_eq!(s, "ea");
+    fn try_from_char() {
+        let sound = Sound::try_voiceless('c');
+        assert_eq!(sound.map(|s| s.to_string()), Ok("c".to_string()));
     }
 
     #[test]
-    fn triphthong() {
-        let s = Sound::triphthong(['e', 'o', 'a']);
-        assert_eq!(s, "eoa");
+    fn try_from_str() {
+        let sound = Sound::try_breathy("kʰ");
+        assert_eq!(sound.map(|s| s.to_string()), Ok("kʰ".to_string()));
+    }
+
+    #[test]
+    fn try_from_char_slice() {
+        let sound = Sound::try_vowel(['ø', 'ʊ', 'ə']);
+        assert_eq!(sound.map(|s| s.to_string()), Ok("øʊə".to_string()));
     }
 }
