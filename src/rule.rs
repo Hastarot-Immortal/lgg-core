@@ -132,14 +132,14 @@ macro_rules! rule {
 #[cfg(test)]
 mod rule_test {
 	use super::*;
-	use crate::{ Sound, PartOfSpeech::NOUN, VoiceLevel, Dictionary };
+	use crate::{ Sound, PartOfSpeech::NOUN, Dictionary };
 
 	rule!(Rule1, move |word: &mut Word| word.swap(0, 1));
 	
 	fn swap_a_with_ea(word: &mut Word) {
 		for sound in word.iter_mut() {
 			if *sound == 'a' {
-				*sound = Sound::diphthong(['e', 'a']);
+				*sound = Sound::try_vowel(['e', 'a']).unwrap();
 			}
 		}
 	}
@@ -155,8 +155,8 @@ mod rule_test {
 
 	#[test]
 	fn rule1() {
-		let a = Sound::monophthong('a');
-		let e = Sound::monophthong('e');
+		let a = Sound::vowel('a');
+		let e = Sound::vowel('e');
 
 		let mut word = Word::from_slice(&[a, e], NOUN);
 		let rule = Rule1;
@@ -166,8 +166,8 @@ mod rule_test {
 
 	#[test]
 	fn rule2() {
-		let a = Sound::monophthong('a');
-		let m = Sound::new('m', VoiceLevel::Sonorant);
+		let a = Sound::vowel('a');
+		let m = Sound::sonorant('m');
 
 		let mut word = Word::from_slice(&[m, a, m, a], NOUN);
 		Rule2::apply_static(&mut word);
@@ -177,9 +177,9 @@ mod rule_test {
 
 	#[test]
 	fn rule3() {
-		let a = Sound::monophthong('a');
-		let s = Sound::new('s', VoiceLevel::Voiceless);
-		let m = Sound::new('m', VoiceLevel::Sonorant);
+		let a = Sound::vowel('a');
+		let s = Sound::voiceless('s');
+		let m = Sound::sonorant('m');
 
 		let mut word1 = Word::from_slice(&[m, a, s, a], NOUN);
 		let mut word2 = word1.clone();
@@ -194,9 +194,9 @@ mod rule_test {
 
 	#[test]
 	fn rule_iter() {
-		let a = Sound::monophthong('a');
-		let e = Sound::monophthong('e');
-		let m = Sound::new('m', VoiceLevel::Sonorant);
+		let a = Sound::vowel('a');
+		let e = Sound::vowel('e');
+		let m = Sound::sonorant('m');
 
 		let mut words = vec![
 			Word::from_slice(&[e, m, m, a], NOUN),
@@ -212,9 +212,9 @@ mod rule_test {
 
 	#[test]
 	fn rule_dict() {
-		let a = Sound::monophthong('a');
-		let e = Sound::monophthong('e');
-		let m = Sound::new('m', VoiceLevel::Sonorant);
+		let a = Sound::vowel('a');
+		let e = Sound::vowel('e');
+		let m = Sound::sonorant('m');
 
 		let mut dict = Dictionary::from_vec(vec![
 			(1, Word::from_slice(&[a, m, m, a], NOUN)),
@@ -231,9 +231,9 @@ mod rule_test {
 
 	#[test]
 	fn rule_static() {
-		let a = Sound::monophthong('a');
-		let e = Sound::monophthong('e');
-		let m = Sound::new('m', VoiceLevel::Sonorant);
+		let a = Sound::vowel('a');
+		let e = Sound::vowel('e');
+		let m = Sound::sonorant('m');
 
 		let mut word1 = Word::from_slice(&[e, m, m, a], NOUN);
 		let mut word2 = word1.clone();

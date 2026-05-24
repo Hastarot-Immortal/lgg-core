@@ -1,8 +1,8 @@
 use crate::{
 	Sound, 
+	sound::TryAsSound,
 	alphabet::{
 		Alphabet, 
-		key::AsKey,
 		iter::Indexes,
 		alphabet::search,
 	}
@@ -13,7 +13,7 @@ mod sealed {
 	pub trait Sealed {}
 
 	impl Sealed for usize {}
-	impl<K> Sealed for K where K: AsKey {}
+	impl<K> Sealed for K where K: TryAsSound {}
 	impl Sealed for Indexes {}
 }
 
@@ -37,7 +37,7 @@ impl AlphabetIndex for usize {
 
 impl<K> AlphabetIndex for K
 where 
-	K: AsKey 
+	K: TryAsSound, 
 {
 	type Output = Sound;
 
@@ -66,7 +66,7 @@ impl AlphabetIndexOwned for usize {
 
 impl<K> AlphabetIndexOwned for K
 where 
-	K: AsKey 
+	K: TryAsSound 
 {
 	type Owned = Sound;
 

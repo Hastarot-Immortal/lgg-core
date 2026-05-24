@@ -2,11 +2,13 @@ use crate::{
     alphabet::{
         iter::Indexes,
         index::{AlphabetIndex, AlphabetIndexOwned},
-        key::{AsKey, AlphabetKey},
     },
     Sound,
+    sound::{AsSound, TryAsSound},
 };
 use std::ops::Index;
+
+pub type AlphabetKey = [u8; 6];
 
 #[derive(Debug, Clone)]
 pub(super) struct AlphabetUnit {
@@ -96,8 +98,11 @@ where
     }
 }
 
-pub(super) fn search<K: AsKey>(alphabet: &Alphabet, key: K) -> Option<&Sound> {
-    avl::search(&alphabet.storage, alphabet.root, key.as_key())
+pub(super) fn search<K: TryAsSound>(alphabet: &Alphabet, key: K) -> Option<&Sound> {
+    match key.try_as_sound() {
+        Ok(key) => avl::search(&alphabet.storage, alphabet.root, key),
+        Err(_) => None,
+    }
 }
 
 mod avl {
@@ -116,7 +121,7 @@ mod avl {
     impl From<Sound> for AVLNode {
         fn from(sound: Sound) -> Self {
             Self {
-                key: sound.as_key(),
+                key: sound.as_sound(),
                 value: sound,
                 left: None,
                 right: None,
@@ -164,7 +169,7 @@ mod avl {
 
     pub(super) fn insert(value: Sound, storage: &mut Vec<AVLNode>, idx: Option<usize>) -> usize {
         if let Some(idx) = idx {
-            match Ord::cmp(&storage[idx].key, &value.as_key()) {
+            match Ord::cmp(&storage[idx].key, &value.as_sound()) {
                 Ordering::Equal => return idx,
                 Ordering::Less => {
                     let right = storage[idx].right;

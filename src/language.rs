@@ -106,17 +106,14 @@ pub trait LanguageTransformer<I, M=FastMap<I, Word>> {
 #[cfg(test)]
 mod language_test {
     use super::*;
-    use crate::{ 
-        Sound,
-        VoiceLevel,
-    };
+    use crate::Sound;
 
     fn create_simple_alphabet() -> (Sound, Sound, Sound, Sound) {
         (
-            Sound::new('t', VoiceLevel::Voiceless),
-            Sound::monophthong('e'),
-            Sound::new('w', VoiceLevel::Sonorant),
-            Sound::new('z', VoiceLevel::Voice)
+            Sound::voiceless('t'),
+            Sound::vowel('e'),
+            Sound::sonorant('w'),
+            Sound::voice('z')
         )
     }
 

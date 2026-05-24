@@ -90,6 +90,44 @@ impl Word {
             }
         }
     }
+
+    pub fn try_replace<F, T>(&self, from: &F, to: &T) -> Result<Word, <T as TryInto<Sound>>::Error>
+    where
+        F: PartialEq<Sound>,
+        T: TryInto<Sound> + Clone,
+    {
+        Ok(self.replace(from, &to.clone().try_into()?))
+    }
+
+    pub fn try_replacen<F, T>(&self, from: &F, to: &T, count: usize) -> Result<Word, <T as TryInto<Sound>>::Error> 
+    where
+        F: PartialEq<Sound>,
+        T: TryInto<Sound> + Clone,
+    {
+        Ok(self.replacen(from, &to.clone().try_into()?, count))
+    }
+
+    pub fn try_replace_in_place<F, T>(&mut self, from: &F, to: &T) -> Result<(), <T as TryInto<Sound>>::Error>
+    where
+        F: PartialEq<Sound>,
+        T: TryInto<Sound> + Clone,
+    {
+        to.clone().try_into().map(|new_sound| {
+            self.replace_in_place(from, &new_sound);
+            ()
+        })
+    }
+
+    pub fn try_replacen_in_place<F, T>(&mut self, from: &F, to: &T, count: usize) -> Result<(), <T as TryInto<Sound>>::Error>
+    where
+        F: PartialEq<Sound>,
+        T: TryInto<Sound> + Clone,
+    {
+        to.clone().try_into().map(|new_sound| {
+            self.replacen_in_place(from, &new_sound, count);
+            ()
+        })
+    }
 }
 
 impl From<(Vec<Sound>, PartOfSpeech)> for Word {
@@ -257,11 +295,11 @@ mod word_test {
 
     #[test]
     fn replace() {
-        let t = Sound::new('t', VoiceLevel::Voiceless);
-        let e = Sound::monophthong('e');
-        let a = Sound::monophthong('a');
-        let w = Sound::new('w', VoiceLevel::Sonorant);
-        let z = Sound::new('z', VoiceLevel::Voice);
+        let t = Sound::voiceless('t');
+        let e = Sound::vowel('e');
+        let a = Sound::vowel('a');
+        let w = Sound::sonorant('w');
+        let z = Sound::voice('z');
 
         let word1 = Word::from(([t, e, e, w, a, z], PartOfSpeech::NOUN));
         let word2 = word1.clone();

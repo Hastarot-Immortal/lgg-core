@@ -74,28 +74,49 @@ impl Sound {
     }
 }
 
-impl<I> TryFrom<(I, VoiceLevel)> for Sound 
-where
-    I: TryAsSound,
-{
-    type Error = TryAsSoundError;
-
-    fn try_from(value: (I, VoiceLevel)) -> Result<Self, Self::Error> {
-        Self::try_from(value.0, value.1)
-    }
+macro_rules! impl_from {
+    ($t:ty) => {
+        impl From<($t, VoiceLevel)> for Sound {
+            fn from(value: ($t, VoiceLevel)) -> Self {
+                Self::from(value.0, value.1)
+            }
+        }
+    };
 }
 
-impl<I> PartialEq<I> for Sound 
-where
-    I: TryAsSound,
-{
-    fn eq(&self, other: &I) -> bool {
-        other.try_as_sound().is_ok_and(|bytes| bytes == self.bytes)
-    }
+macro_rules! impl_try_from {
+    ($t:ty) => {
+        impl TryFrom<($t, VoiceLevel)> for Sound {
+            type Error = TryAsSoundError;
+
+            fn try_from(value: ($t, VoiceLevel)) -> Result<Self, Self::Error> {
+                Self::try_from(value.0, value.1)
+            }
+        }
+    };
 }
+
+impl_from!(char);
+impl_try_from!(&str);
+impl_try_from!([char; 1]);
+impl_try_from!([char; 2]);
+impl_try_from!([char; 3]);
+impl_try_from!(String);
 
 macro_rules! impl_partial_eq {
     ($other:ty) => {
+        impl PartialEq<$other> for Sound {
+            fn eq(&self, other: &$other) -> bool {
+                other.try_as_sound().is_ok_and(|bytes| bytes == self.bytes)
+            }
+        }
+
+        impl PartialEq<&$other> for Sound {
+            fn eq(&self, other: &&$other) -> bool {
+                PartialEq::eq(self, *other)
+            }
+        }
+
         impl PartialEq<Sound> for $other {
             fn eq(&self, other: &Sound) -> bool {
                 self.try_as_sound().is_ok_and(|bytes| bytes == other.bytes)
@@ -146,6 +167,22 @@ pub trait AsSound {
     fn as_sound(&self) -> [u8; 6];
 }
 
+pub trait TryAsSound {
+    fn try_as_sound(&self) -> Result<[u8; 6], TryAsSoundError>; 
+}
+
+impl AsSound for Sound {
+    fn as_sound(&self) -> [u8; 6] {
+        self.bytes
+    }
+}
+
+impl TryAsSound for Sound {
+    fn try_as_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
+        Ok(self.bytes.clone())
+    }
+}
+
 impl AsSound for char {
     fn as_sound(&self) -> [u8; 6] {
         let mut res = [0; 6];
@@ -156,14 +193,7 @@ impl AsSound for char {
     }
 }
 
-pub trait TryAsSound {
-    fn try_as_sound(&self) -> Result<[u8; 6], TryAsSoundError>; 
-}
-
-impl<I> TryAsSound for I
-where
-    I: AsSound,
-{
+impl TryAsSound for char {
     fn try_as_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
         Ok(self.as_sound())
     }

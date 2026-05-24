@@ -1,11 +1,9 @@
 pub mod alphabet;
 pub mod iter;
-pub mod key;
 pub mod index;
 
 pub use alphabet::Alphabet;
 pub use iter::{IntoIter, Iter, Indexes};
-pub use key::{AlphabetKey, AsKey};
 pub use index::{AlphabetIndex, AlphabetIndexOwned};
 
 #[cfg(test)]
@@ -16,33 +14,33 @@ mod alphabet_test {
 
     static ALPHABET: LazyLock<Alphabet> = LazyLock::new(|| {
         Alphabet::from([
-            Sound::monophthong('a'),
-            Sound::monophthong('e'),
-            Sound::monophthong('i'),
-            Sound::monophthong('u'),
-            Sound::monophthong('o'),
-            Sound::monophthong('ʊ'),
-            Sound::diphthong(['o', 'u']),
-            Sound::diphthong(['e', 'j']),
-            Sound::new('w', VoiceLevel::Sonorant),
-            Sound::new('m', VoiceLevel::Sonorant),
-            Sound::new('r', VoiceLevel::Sonorant),
-            Sound::new('j', VoiceLevel::Sonorant),
-            Sound::new('n', VoiceLevel::Sonorant),
-            Sound::new('v', VoiceLevel::Voice),
-            Sound::new('z', VoiceLevel::Voice),
-            Sound::new('d', VoiceLevel::Voice),
-            Sound::new('b', VoiceLevel::Voice),
-            Sound::new('ð', VoiceLevel::Voice),
-            Sound::new('ʒ', VoiceLevel::Voice),
-            Sound::new('β', VoiceLevel::Voice),
-            Sound::new('s', VoiceLevel::Voiceless),
-            Sound::new('t', VoiceLevel::Voiceless),
-            Sound::new('f', VoiceLevel::Voiceless),
-            Sound::new('k', VoiceLevel::Voiceless),
-            Sound::new('x', VoiceLevel::Voiceless),
-            Sound::new('ʃ', VoiceLevel::Voiceless),
-            Sound::new('θ', VoiceLevel::Voiceless),
+            Sound::vowel('a'),
+            Sound::vowel('e'),
+            Sound::vowel('i'),
+            Sound::vowel('u'),
+            Sound::vowel('o'),
+            Sound::vowel('ʊ'),
+            Sound::try_vowel(['o', 'u']).unwrap(),
+            Sound::try_vowel(['e', 'j']).unwrap(),
+            Sound::sonorant('w'),
+            Sound::sonorant('m'),
+            Sound::sonorant('r'),
+            Sound::sonorant('j'),
+            Sound::sonorant('n'),
+            Sound::voice('v'),
+            Sound::voice('z'),
+            Sound::voice('d'),
+            Sound::voice('b'),
+            Sound::voice('ð'),
+            Sound::voice('ʒ'),
+            Sound::voice('β'),
+            Sound::voiceless('s'),
+            Sound::voiceless('t'),
+            Sound::voiceless('f'),
+            Sound::voiceless('k'),
+            Sound::voiceless('x'),
+            Sound::voiceless('ʃ'),
+            Sound::voiceless('θ'),
         ])
     });
 

@@ -10,17 +10,16 @@ mod dictionary_test {
     use crate::{ 
         Sound, 
         Word,
-        VoiceLevel, 
         PartOfSpeech
     };
     use crate::collections::*;
 
     fn create_simple_alphabet() -> (Sound, Sound, Sound, Sound) {
         (
-            Sound::new('s', VoiceLevel::Voiceless),
-            Sound::monophthong('a'),
-            Sound::new('m', VoiceLevel::Sonorant),
-            Sound::new('v', VoiceLevel::Voice)
+            Sound::voiceless('s'),
+            Sound::vowel('a'),
+            Sound::sonorant('m'),
+            Sound::voice('v')
         )
     }
 
