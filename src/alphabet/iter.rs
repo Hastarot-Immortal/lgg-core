@@ -6,6 +6,7 @@ use std::{
 };
 use crate::{
     Sound, 
+    VoiceLevel,
     alphabet::{
         Alphabet, 
         alphabet::AlphabetUnit
@@ -101,5 +102,41 @@ impl<'a> IntoIterator for &'a mut Indexes {
 
     fn into_iter(self) -> Self::IntoIter {
         self.inner.iter_mut()
+    }
+}
+
+pub struct VoiceLevelSet(pub(crate) u8);
+
+impl From<VoiceLevel> for VoiceLevelSet {
+    fn from(level: VoiceLevel) -> Self {
+        Self(1 << (level as u8))
+    } 
+}
+
+impl From<&[VoiceLevel]> for VoiceLevelSet {
+    fn from(values: &[VoiceLevel]) -> Self {
+        Self::from_iter(values.into_iter().copied())
+    }
+}
+
+impl From<Vec<VoiceLevel>> for VoiceLevelSet {
+    fn from(values: Vec<VoiceLevel>) -> Self {
+        Self::from_iter(values.into_iter())
+    }
+}
+
+impl<const N: usize> From<[VoiceLevel; N]> for VoiceLevelSet {
+    fn from(values: [VoiceLevel; N]) -> Self {
+        Self::from_iter(values.into_iter())
+    }
+}
+
+impl FromIterator<VoiceLevel> for VoiceLevelSet {
+    fn from_iter<T: IntoIterator<Item = VoiceLevel>>(iter: T) -> Self {
+        let mut byte = 0u8;
+        for value in iter.into_iter() {
+            byte |= 1 << (value as u8);
+        }
+        Self(byte)
     }
 }

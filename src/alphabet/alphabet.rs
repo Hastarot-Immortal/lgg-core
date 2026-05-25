@@ -1,6 +1,6 @@
 use crate::{
     alphabet::{
-        iter::Indexes,
+        iter::{Indexes, VoiceLevelSet},
         index::{AlphabetIndex, AlphabetIndexOwned},
     },
     Sound,
@@ -84,6 +84,24 @@ impl Alphabet {
                 .enumerate()
                 .filter_map(|(i, u)| if f(&u.sound) { Some(i) } else { None })
                 .collect(),
+        }
+    }
+
+    pub fn indexes_by_voice_level<I: Into<VoiceLevelSet>>(&self, levels: I) -> Indexes {
+        let vl_set = levels.into();
+        Indexes {
+            inner: self.storage
+                .iter()
+                .enumerate()
+                .filter_map(|(i, u)| {
+                    let shift = u.sound.voice_level() as u8;
+                    if ((1 << shift) & vl_set.0) != 0 {
+                        Some(i)
+                    } else {
+                        None
+                    }
+                })
+                .collect()
         }
     }
 }
