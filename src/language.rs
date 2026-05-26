@@ -1,4 +1,4 @@
-use crate::{Dictionary, PartOfSpeech, Rule, Word, collections::FastMap };
+use crate::{Dictionary, PartOfSpeech, Rule, Word, collections::FastMap as DefaultMap};
 
 use std::{
     hash::Hash,
@@ -6,7 +6,7 @@ use std::{
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Language<I, M=FastMap<I, Word>> {
+pub struct Language<I, M=DefaultMap<I, Word>> {
 	dictionary: Dictionary<I, M>,
 }
 
@@ -37,8 +37,7 @@ where
     }
 }
 
-impl<I, M> From<Dictionary<I, M>> for Language<I, M>
-{
+impl<I, M> From<Dictionary<I, M>> for Language<I, M> {
     fn from(dictionary: Dictionary<I, M>) -> Self {
         Self { dictionary }
     }
@@ -80,25 +79,33 @@ impl<I, M> DerefMut for Language<I, M> {
     }
 }
 
-pub trait LanguageBuilder<T, M=FastMap<T, Word>> {
+pub trait LanguageBuilder<T, M=DefaultMap<T, Word>> {
     fn new() -> Self;
     fn build<I: IntoIterator<Item=(T, PartOfSpeech)>>(&mut self, words: I) -> Language<T, M>;
 }
 
 pub trait RuleBasedLanguageBuilder {
-    fn rules<I: IntoIterator<Item=Box<dyn Rule>>>(self, rules: I) -> Self;
+    fn rules<R, I>(self, rules: I) -> Self
+    where
+        R: Into<Box<dyn Rule>>,
+        I: IntoIterator<Item=R>;
 }
 
 pub trait RandomLanguageBuilder {
 	type Seed;
-	fn seed(self, seed: Self::Seed) -> Self;
+	fn seed<S: Into<Self::Seed>>(self, seed: S) -> Self;
 }
 
-pub trait LanguageExtender<T, M=FastMap<T, Word>> {
+#[cfg(feature="alphabet")]
+pub trait LanguageWithAlphabetBuilder {
+    fn alphabet<A: Into<crate::alphabet::Alphabet>>(self, alphabet: A) -> Self;
+}
+
+pub trait LanguageExtender<T, M=DefaultMap<T, Word>> {
     fn extend<I: IntoIterator<Item=(T, Word)>>(&mut self, language: &mut Language<T, M>, words: I);
 }
 
-pub trait LanguageTransformer<I, M=FastMap<I, Word>> {
+pub trait LanguageTransformer<I, M=DefaultMap<I, Word>> {
     fn transform(&mut self, language: &mut Language<I, M>);
     fn transform_create<T, N>(&mut self, language: &Language<I, M>) -> Language<T, N>;
 }
@@ -130,4 +137,6 @@ mod language_test {
         assert_eq!(language.get(&2).map(|word| word.to_string()), Some("zew".to_string()));
         assert_eq!(language.get(&3).map(|word| word.to_string()), Some("tez".to_string()));
     }
+
+
 }
