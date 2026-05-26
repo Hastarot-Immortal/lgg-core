@@ -1,5 +1,5 @@
 use std::{
-    ops::{Deref, DerefMut},
+    ops::{Deref, DerefMut, Sub, SubAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Not},
     iter::Map,
     vec::IntoIter as VecIntoIter,
     slice::Iter as SliceIter,
@@ -105,7 +105,83 @@ impl<'a> IntoIterator for &'a mut Indexes {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct VoiceLevelSet(pub(crate) u8);
+
+impl VoiceLevelSet {
+    pub const ALL: VoiceLevelSet = VoiceLevelSet(0b11_1111);
+}
+
+impl<Rhs> Sub<Rhs> for VoiceLevelSet
+where
+    Rhs: Into<VoiceLevelSet>
+{
+    type Output = VoiceLevelSet;
+
+    fn sub(mut self, other: Rhs) -> Self::Output {
+        self.0 &= !other.into().0;
+        self
+    }
+}
+
+impl<Rhs> SubAssign<Rhs> for VoiceLevelSet 
+where
+    Rhs: Into<VoiceLevelSet>
+{
+    fn sub_assign(&mut self, other: Rhs) {
+        self.0 &= !(other.into().0) & 0b11_1111;
+    }
+}
+
+impl<Rhs> BitAnd<Rhs> for VoiceLevelSet 
+where
+    Rhs: Into<VoiceLevelSet>
+{
+    type Output = VoiceLevelSet;
+
+    fn bitand(mut self, other: Rhs) -> Self::Output {
+        self.0 &= other.into().0;
+        self
+    }
+}
+
+impl<Rhs> BitAndAssign<Rhs> for VoiceLevelSet
+where
+    Rhs: Into<VoiceLevelSet>
+{
+    fn bitand_assign(&mut self, other: Rhs) {
+        self.0 &= other.into().0;
+    }
+}
+
+impl<Rhs> BitOr<Rhs> for VoiceLevelSet 
+where
+    Rhs: Into<VoiceLevelSet>
+{
+    type Output = VoiceLevelSet;
+
+    fn bitor(mut self, other: Rhs) -> Self::Output {
+        self.0 |= other.into().0;
+        self
+    }
+}
+
+impl<Rhs> BitOrAssign<Rhs> for VoiceLevelSet
+where
+    Rhs: Into<VoiceLevelSet>
+{
+    fn bitor_assign(&mut self, other: Rhs) {
+        self.0 |= other.into().0;
+    }
+}
+
+impl Not for VoiceLevelSet {
+    type Output = VoiceLevelSet;
+
+    fn not(self) -> Self::Output {
+        VoiceLevelSet(!self.0 & 0b11_1111)
+    }
+}
 
 impl From<VoiceLevel> for VoiceLevelSet {
     fn from(level: VoiceLevel) -> Self {

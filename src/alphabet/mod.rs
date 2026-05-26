@@ -9,7 +9,7 @@ pub use index::{AlphabetIndex, AlphabetIndexOwned};
 #[cfg(test)]
 mod alphabet_test {
     use super::*;
-    use crate::{Sound, VoiceLevel};
+    use crate::{Sound, VoiceLevel::*};
     use std::sync::LazyLock;
 
     static ALPHABET: LazyLock<Alphabet> = LazyLock::new(|| {
@@ -68,7 +68,7 @@ mod alphabet_test {
 
     #[test]
     fn indexes_by() {
-        let indexes = ALPHABET.indexes_by(|s| s.voice_level() == VoiceLevel::Sonorant);
+        let indexes = ALPHABET.indexes_by(|s| s.voice_level() == Sonorant);
         assert_eq!(indexes.len(), 5);
         assert!(ALPHABET.get_owned(indexes).is_some());
     }
@@ -88,7 +88,7 @@ mod alphabet_test {
 
     #[test]
     fn indexes_by_voice_level_from_single() {
-        let indexes = SIMPLE_ALPHABET.indexes_by_voice_level(VoiceLevel::Sonorant);
+        let indexes = SIMPLE_ALPHABET.indexes_by_voice_level(Sonorant);
         assert_eq!(indexes.len(), 2);
         assert!(SIMPLE_ALPHABET.get_owned(indexes.clone()).is_some());
         assert!(SIMPLE_ALPHABET.get_owned(indexes.clone()).is_some_and(|v| v.contains(&Sound::sonorant('w'))));
@@ -106,13 +106,21 @@ mod alphabet_test {
 
     #[test]
     fn indexes_by_voice_level_from_array() {
-        let indexes = SIMPLE_ALPHABET.indexes_by_voice_level([VoiceLevel::Sonorant, VoiceLevel::Vowel]);
+        let indexes = SIMPLE_ALPHABET.indexes_by_voice_level([Sonorant, Vowel]);
         test_array_with_sonorants_and_vowels(indexes);
     }
 
     #[test]
     fn indexes_by_voice_level_from_slice() {
-        let indexes = SIMPLE_ALPHABET.indexes_by_voice_level([VoiceLevel::Sonorant, VoiceLevel::Vowel].as_slice());
+        let indexes = SIMPLE_ALPHABET.indexes_by_voice_level([Sonorant, Vowel].as_slice());
         test_array_with_sonorants_and_vowels(indexes);
+    }
+
+    #[test]
+    fn voice_level_set() {
+        let vl_set = VoiceLevelSet::ALL - Sonorant;
+        let vl_set = vl_set & [Sonorant, Vowel, Voice];
+        let vl_set = vl_set | Voiceless;
+        assert_eq!(!vl_set,  VoiceLevelSet::from([Breathy, Creaky, Sonorant]));
     }
 }
