@@ -1,7 +1,7 @@
 use crate::Sound;
 use std::{
     fmt,
-    ops::{ Deref, DerefMut, Index, IndexMut },
+    ops::{Deref, DerefMut, Index, IndexMut},
     cmp::PartialEq,
 };
 
@@ -35,7 +35,7 @@ impl Word {
     }
 
     pub fn distance(&self, other: &Word) -> usize {
-        utils::minimal_edit_distance(&self, &other, utils::DefaultCost)
+        utils::minimal_edit_distance(self, &other, utils::DefaultCost)
     }
 
     pub fn distance_with_cost(&self, other: &Word, cost: impl DistanceCost) -> usize {
@@ -48,7 +48,7 @@ impl Word {
         T: Into<Sound> + Clone,
     {
         let mut res = self.clone();
-        res.replace_in_place(from, to);
+        res.replace_in(from, to);
         res
     }
 
@@ -58,11 +58,11 @@ impl Word {
         T: Into<Sound> + Clone,
     {
         let mut res = self.clone();
-        res.replacen_in_place(from, to, count);
+        res.replacen_in(from, to, count);
         res
     }
 
-    pub fn replace_in_place<F, T>(&mut self, from: &F, to: &T) 
+    pub fn replace_in<F, T>(&mut self, from: &F, to: &T) 
     where
         F: PartialEq<Sound>,
         T: Into<Sound> + Clone,
@@ -74,7 +74,7 @@ impl Word {
         }
     }
 
-    pub fn replacen_in_place<F, T>(&mut self, from: &F, to: &T, count: usize) 
+    pub fn replacen_in<F, T>(&mut self, from: &F, to: &T, count: usize) 
     where
         F: PartialEq<Sound>,
         T: Into<Sound> + Clone,
@@ -107,24 +107,24 @@ impl Word {
         Ok(self.replacen(from, &to.clone().try_into()?, count))
     }
 
-    pub fn try_replace_in_place<F, T>(&mut self, from: &F, to: &T) -> Result<(), <T as TryInto<Sound>>::Error>
+    pub fn try_replace_in<F, T>(&mut self, from: &F, to: &T) -> Result<(), <T as TryInto<Sound>>::Error>
     where
         F: PartialEq<Sound>,
         T: TryInto<Sound> + Clone,
     {
         to.clone().try_into().map(|new_sound| {
-            self.replace_in_place(from, &new_sound);
+            self.replace_in(from, &new_sound);
             ()
         })
     }
 
-    pub fn try_replacen_in_place<F, T>(&mut self, from: &F, to: &T, count: usize) -> Result<(), <T as TryInto<Sound>>::Error>
+    pub fn try_replacen_in<F, T>(&mut self, from: &F, to: &T, count: usize) -> Result<(), <T as TryInto<Sound>>::Error>
     where
         F: PartialEq<Sound>,
         T: TryInto<Sound> + Clone,
     {
         to.clone().try_into().map(|new_sound| {
-            self.replacen_in_place(from, &new_sound, count);
+            self.replacen_in(from, &new_sound, count);
             ()
         })
     }
@@ -185,41 +185,25 @@ impl fmt::Display for Word {
     }
 }
 
-impl PartialEq<String> for Word {
-    fn eq(&self, other: &String) -> bool {
-        PartialEq::eq(&self.to_string(), other)
-    }
+macro_rules! impl_partial_eq {
+    ($T:ty) => {
+        impl PartialEq<$T> for Word {
+            fn eq(&self, other: &$T) -> bool {
+                PartialEq::eq(&self.to_string()[..], &other[..])
+            }
+        }
+
+        impl PartialEq<Word> for $T {
+            fn eq(&self, other: &Word) -> bool {
+                PartialEq::eq(&other, &self)
+            }
+        }
+    };
 }
 
-impl PartialEq<Word> for String {
-    fn eq(&self, other: &Word) -> bool {
-        PartialEq::eq(&other, &self)
-    }
-}
-
-impl PartialEq<&str> for Word {
-    fn eq(&self, other: &&str) -> bool {
-        PartialEq::eq(&self.to_string()[..], &other[..])
-    }
-}
-
-impl PartialEq<Word> for &str {
-    fn eq(&self, other: &Word) -> bool {
-        PartialEq::eq(&other, &self)
-    }
-}
-
-impl PartialEq<str> for Word {
-    fn eq(&self, other: &str) -> bool {
-        PartialEq::eq(&self.to_string()[..], &other[..])
-    }
-}
-
-impl PartialEq<Word> for str {
-    fn eq(&self, other: &Word) -> bool {
-        PartialEq::eq(&other, &self)
-    }
-}
+impl_partial_eq!(String);
+impl_partial_eq!(str);
+impl_partial_eq!(&str);
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -293,13 +277,19 @@ mod word_test {
     use super::*;
     use crate::VoiceLevel;
 
+    fn create_simple_alphabet() -> (Sound, Sound, Sound, Sound, Sound) {
+        (
+            Sound::voiceless('t'),
+            Sound::vowel('e'),
+            Sound::vowel('a'),
+            Sound::sonorant('w'),
+            Sound::voice('z')
+        )
+    }
+
     #[test]
     fn replace() {
-        let t = Sound::voiceless('t');
-        let e = Sound::vowel('e');
-        let a = Sound::vowel('a');
-        let w = Sound::sonorant('w');
-        let z = Sound::voice('z');
+        let (t, e, a, w, z) = create_simple_alphabet();
 
         let word1 = Word::from(([t, e, e, w, a, z], PartOfSpeech::NOUN));
         let word2 = word1.clone();
@@ -307,10 +297,20 @@ mod word_test {
         let mut word3 = word1.replace(&e, &a);
         let mut word4 = word2.replacen(&e, &a, 1);
     
-        word3.replace_in_place(&'a', &('e', VoiceLevel::Vowel));
-        word4.replacen_in_place(&"a", &e, 1);
+        word3.replace_in(&'a', &('o', VoiceLevel::Vowel));
+        word4.replacen_in(&"a", &e, 1);
 
-        assert_eq!(word3, "teewez");
+        assert_eq!(word3, "toowoz");
         assert_eq!(word4, word2);
+    }
+
+    #[test]
+    fn distance() {
+        let (t, e, a, w, z) = create_simple_alphabet();
+
+        let word1 = Word::from(([t, e, e, w, a, z], PartOfSpeech::NOUN));
+        let word2 = Word::from(([t, e, a, w, a, z], PartOfSpeech::NOUN));
+        let dist = word1.distance(&word2);
+        assert_eq!(dist, 1);
     }
 }

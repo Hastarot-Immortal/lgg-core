@@ -6,9 +6,7 @@ pub trait Rule {
 	fn apply_static(word: &mut Word) where Self: Sized;
 
 	fn apply_iter<'a>(&self, words: &mut dyn Iterator<Item = &'a mut Word>) {
-		for word in words {
-			self.apply(word);
-		}
+		words.for_each(|word| self.apply(word));
 	}
 	
 	fn apply_iter_static<'a, I>(words: &mut I) 
@@ -16,9 +14,7 @@ pub trait Rule {
 		I: Iterator<Item = &'a mut Word>,
 		Self: Sized,
 	{
-		for word in words {
-			Self::apply_static(word);
-		}
+		words.for_each(Self::apply_static);
 	}
 }
 
