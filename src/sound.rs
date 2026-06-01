@@ -1,5 +1,9 @@
 use std::fmt::{Display, Formatter, Error as FmtError};
 
+// Represents a distinct linguistic sound (**phoneme**) within a word.
+///
+/// Under the hood, this is an optimization that stores the phoneme inside a 
+/// stack-allocated, fixed-size byte array (`[u8; 6]`) paired alongside its [`VoiceLevel`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Sound {
     bytes: [u8; 6],
@@ -7,6 +11,7 @@ pub struct Sound {
 }
 
 impl Sound {
+    /// Creates a new `Sound` from a type that guarantees a infallible conversion.
     pub fn from<I: AsSound>(symbol: I, level: VoiceLevel) -> Self {
         Self {
             bytes: symbol.as_sound(),
@@ -14,6 +19,11 @@ impl Sound {
         }
     }
 
+    /// Attempts to create a `Sound` from a type that might fail conversion.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TryAsSoundError`] if the symbol is larger than 6 bytes.
     pub fn try_from<I: TryAsSound>(symbol: I, level: VoiceLevel) -> Result<Self, TryAsSoundError> {
         Ok(Self {
             bytes: symbol.try_as_sound()?,
@@ -21,54 +31,91 @@ impl Sound {
         })
     }
 
+    /// Creates a new sound with a [`VoiceLevel::Vowel`] classification.
     pub fn vowel<I: AsSound>(symbol: I) -> Self {
         Self::from(symbol, VoiceLevel::Vowel)
     }
 
+    /// Attempts to create a new sound with a [`VoiceLevel::Vowel`] classification.
+    /// 
+    /// # Errors
+    ///
+    /// Returns [`TryAsSoundError`] if the `symbol` is larger than 6 bytes.
     pub fn try_vowel<I: TryAsSound>(symbol: I) -> Result<Self, TryAsSoundError> {
         Self::try_from(symbol, VoiceLevel::Vowel)
     }
 
+    /// Creates a new sound with a [`VoiceLevel::Sonorant`] classification.
     pub fn sonorant<I: AsSound>(symbol: I) -> Self {
         Self::from(symbol, VoiceLevel::Sonorant)
     }
 
+    /// Attempts to create a new sound with a [`VoiceLevel::Sonorant`] classification.
+    /// 
+    /// # Errors
+    ///
+    /// Returns [`TryAsSoundError`] if the `symbol` is larger than 6 bytes.
     pub fn try_sonorant<I: TryAsSound>(symbol: I) -> Result<Self, TryAsSoundError> {
         Self::try_from(symbol, VoiceLevel::Sonorant)
     }
 
+    /// Creates a new sound with a [`VoiceLevel::Voice`] classification.
     pub fn voice<I: AsSound>(symbol: I) -> Self {
         Self::from(symbol, VoiceLevel::Voice)
     }
 
+    /// Attempts to create a new sound with a [`VoiceLevel::Voice`] classification.
+    /// 
+    /// # Errors
+    ///
+    /// Returns [`TryAsSoundError`] if the `symbol` is larger than 6 bytes.
     pub fn try_voice<I: TryAsSound>(symbol: I) -> Result<Self, TryAsSoundError> {
         Self::try_from(symbol, VoiceLevel::Voice)
     }
 
+    /// Creates a new sound with a [`VoiceLevel::Creaky`] classification.
     pub fn creaky<I: AsSound>(symbol: I) -> Self {
         Self::from(symbol, VoiceLevel::Creaky)
     }
 
+    /// Attempts to create a new sound with a [`VoiceLevel::Creaky`] classification.
+    /// 
+    /// # Errors
+    ///
+    /// Returns [`TryAsSoundError`] if the `symbol` is larger than 6 bytes.
     pub fn try_creaky<I: TryAsSound>(symbol: I) -> Result<Self, TryAsSoundError> {
         Self::try_from(symbol, VoiceLevel::Creaky)
     }
 
+    /// Creates a new sound with a [`VoiceLevel::Breathy`] classification.
     pub fn breathy<I: AsSound>(symbol: I) -> Self {
         Self::from(symbol, VoiceLevel::Breathy)
     }
 
+    /// Attempts to create a new sound with a [`VoiceLevel::Breathy`] classification.
+    /// 
+    /// # Errors
+    ///
+    /// Returns [`TryAsSoundError`] if the `symbol` is larger than 6 bytes.
     pub fn try_breathy<I: TryAsSound>(symbol: I) -> Result<Self, TryAsSoundError> {
         Self::try_from(symbol, VoiceLevel::Breathy)
     }
 
+    /// Creates a new sound with a [`VoiceLevel::Voiceless`] classification.
     pub fn voiceless<I: AsSound>(symbol: I) -> Self {
         Self::from(symbol, VoiceLevel::Voiceless)
     }
 
+    /// Attempts to create a new sound with a [`VoiceLevel::Voiceless`] classification.
+    /// 
+    /// # Errors
+    ///
+    /// Returns [`TryAsSoundError`] if the `symbol` is larger than 6 bytes.
     pub fn try_voiceless<I: TryAsSound>(symbol: I) -> Result<Self, TryAsSoundError> {
         Self::try_from(symbol, VoiceLevel::Voiceless)
     }
 
+    /// Returns the [`VoiceLevel`] of this sound.
     pub fn voice_level(&self) -> VoiceLevel {
         self.level
     }
@@ -152,21 +199,51 @@ impl Display for Sound {
     }
 }
 
+/// Represents the phonological voicing/acoustic categorization of a particular [`Sound`].
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum VoiceLevel {
+    /// Produced without vocal cord vibration (e.g., 'p', 't', 'k').
     Voiceless,
+    /// Produced with the vocal cords vibrating, but loosely enough to let air escape (breathy voice).
     Breathy,
+    /// Produced with the vocal cords tightly held together, creating a crackling sound (creaky voice).
     Creaky,
+    /// Standard modal voicing with regular vocal fold vibration (e.g., 'b', 'd', 'g').
     Voice,
+    /// Continuant speech sounds produced with a relatively open vocal tract (e.g., nasals, liquids).
     Sonorant,
+    /// Open vocal tract sounds acting as a syllable nucleus.
     Vowel,
 }
 
+/// A trait for infallibly creating a fixed 6-byte sequence representation to form a [`Sound`].
+///
+/// ```
+/// use lgg_core::Sound;
+//
+/// let a = Sound::vowel('a');
+///
+/// assert_eq!(a, "a");
+/// ```
 pub trait AsSound {
     fn as_sound(&self) -> [u8; 6];
 }
 
+/// A trait for types that can optionally be converted into a [`Sound`].
+///
+/// Types implementing this trait are not inherently guaranteed to fit inside the
+/// limit required by `Sound`. If the layout constraint is broken, `TryAsSoundError` is returned.
+///
+/// ```
+/// use lgg_core::Sound;
+//
+/// let oue = Sound::try_vowel(['ø', 'ʊ', 'ə']);
+/// 
+/// let s_oue = oue.map(|s| s.to_string());
+///
+/// assert_eq!(s_oue, Ok("øʊə".to_owned()));
+/// ```
 pub trait TryAsSound {
     fn try_as_sound(&self) -> Result<[u8; 6], TryAsSoundError>; 
 }
@@ -256,12 +333,21 @@ macro_rules! impl_try_as_sound_for_array {
 
 impl_try_as_sound_for_array!(1, 2, 3);
 
+/// The error type returned when a value is too large to be safely allocated inside a [`Sound`].
+/// 
+/// ```
+/// use lgg_core::sound::*;
+///
+/// let err = Sound::try_vowel("uuuuuuuu");
+/// 
+/// assert_eq!(err, Err(TryAsSoundError));
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TryAsSoundError;
 
 impl Display for TryAsSoundError {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(f, "this is too big to convert into Sound")
+        write!(f, "too large to convert into Sound")
     }
 }
 
