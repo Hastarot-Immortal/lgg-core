@@ -5,6 +5,7 @@ use std::{
     cmp::PartialEq,
 };
 
+/// Represents word as a vector of [`Sound`] with its grammatical type [`PartOfSpeech`]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Word {
     sounds: Vec<Sound>,
@@ -34,10 +35,14 @@ impl Word {
         self.pos
     }
 
+    /// Calculates the Levenshtein minimal edit distance between this word and another using standard uniform costs.
+    ///
+    /// The default implementation weights standard structural mutations (insertions, deletions, substitutions) as `1`.
     pub fn distance(&self, other: &Word) -> usize {
         utils::minimal_edit_distance(self, &other, utils::DefaultCost)
     }
 
+    /// Calculates the Levenshtein minimal edit distance between this word and another usimg custom algorithmic weights.
     pub fn distance_with_cost(&self, other: &Word, cost: impl DistanceCost) -> usize {
         utils::minimal_edit_distance(self, other, cost)
     }
@@ -205,24 +210,41 @@ impl_partial_eq!(String);
 impl_partial_eq!(str);
 impl_partial_eq!(&str);
 
+/// A grammatical category or [`Word`]
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum PartOfSpeech {
+    /// Noun (substantive objects/concepts)
     NOUN,
+    /// Verb (action or state states)
     VERB,
+    /// Adjective (modifiers of nouns)
     ADJ,
+    /// Adverb (modifiers of verbs, adjectives, or other adverbs)
     ADV,
+    /// Pronoun (structural replacement markers)
     PRON,
+    /// Determiner (identifying context markers)
     DET,
+    /// Adposition (prepositions and postpositions)
     ADP,
+    /// Numeral (cardinal or ordinal representations)
     NUM,
+    /// Conjunction (syntactic coordinators)
     CONJ,
+    /// Particle (independent grammatical markers)
     PART
 }
 
+/// A metric configuration trait defining penalties for minimal edit distance calculations.
 pub trait DistanceCost {
+    /// Penalty cost when inserting a new `Sound`. Defaults to `1`.
     fn insert(&self) -> usize { 1 }
+    
+    /// Penalty cost when deleting an existing `Sound`. Defaults to `1`.
     fn delete(&self) -> usize { 1 }
+    
+    /// Penalty cost when converting one `Sound` to another. Defaults to `0` if equal, otherwise `1`.
     fn substitution(&self, first: &Sound, second: &Sound) -> usize {
         if first == second { 0 } else { 1 }
     }
