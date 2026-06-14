@@ -13,40 +13,136 @@ pub struct Word {
 }
 
 impl Word {
+    /// Instantiates a word from a `Vec` of [`Sound`].
     pub fn from_vec(sounds: Vec<Sound>, pos: PartOfSpeech) -> Self {
         Self { sounds, pos }
     }
 
+    /// Instantiates a word from a slice of [`Sound`].
     pub fn from_slice(sounds: &[Sound], pos: PartOfSpeech) -> Self {
         Self {
             sounds: Vec::from(sounds),
             pos,
         }
     }
-
+    
+    /// Instantiates a word stack-allocated array of [`Sound`].
+    ///
+    ///```
+    /// use lgg_core::{Word, PartOfSpeech, Sound};
+    ///
+    /// let word = Word::from_array([
+    ///     Sound::voiceless('t'),
+    ///     Sound::vowel('e'),
+    ///     Sound::vowel('a'),
+    /// ], PartOfSpeech::NOUN);
+    ///
+    /// assert_eq!(word, "tea");
+    ///```
     pub fn from_array<const N: usize>(sounds: [Sound; N], pos: PartOfSpeech) -> Self {
         Self { 
             sounds: Vec::from(sounds),
             pos,
         }
     }
-
+    
+    /// Returns the [`PartOfSpeech`] tag of the word.
     pub fn pos(&self) -> PartOfSpeech {
         self.pos
     }
 
-    /// Calculates the Levenshtein minimal edit distance between this word and another using standard uniform costs.
+    /// Calculates the Damerau–Levenshtein minimal edit distance between this word and another one using standard uniform costs.
     ///
-    /// The default implementation weights standard structural mutations (insertions, deletions, substitutions) as `1`.
+    /// The default implementation weights standard structural mutations (insertions, deletions, transpositions, substitutions) as `1`.
+    ///
+    /// ```
+    /// use lgg_core::{Word, PartOfSpeech, Sound};
+    ///
+    /// let t = Sound::voiceless('t');
+    /// let e = Sound::vowel('e');
+    /// let a = Sound::vowel('a');
+    /// let w = Sound::sonorant('w');
+    ///
+    /// let word1 = Word::from(([t, e, a], PartOfSpeech::NOUN));
+    /// let word2 = Word::from(([t, a, w], PartOfSpeech::NOUN));
+    ///
+    /// assert_eq!(word1.distance(&word2), 2);
+    /// ```
     pub fn distance(&self, other: &Word) -> usize {
-        utils::minimal_edit_distance(self, &other, utils::DefaultCost)
+        distance::minimal_edit_distance(self, &other, &distance::DefaultCost)
     }
 
-    /// Calculates the Levenshtein minimal edit distance between this word and another usimg custom algorithmic weights.
-    pub fn distance_with_cost(&self, other: &Word, cost: impl DistanceCost) -> usize {
-        utils::minimal_edit_distance(self, other, cost)
+    /// Calculates the Damerau–Levenshtein minimal edit distance between this word and another one using custom algorithmic weights.
+    /// ```
+    /// use lgg_core::{Word, PartOfSpeech, Sound, word::DistanceCost};
+    ///
+    /// pub struct MyDistanceCost;
+    ///
+    /// impl DistanceCost for MyDistanceCost {
+    ///     fn transposition(&self) -> usize { 2 }
+    /// }
+    ///
+    /// let s = Sound::voiceless('s');
+    /// let e = Sound::vowel('e');
+    /// let a = Sound::vowel('a');
+    ///
+    /// let word1 = Word::from(([s, e, a], PartOfSpeech::NOUN));
+    /// let word2 = Word::from(([s, a, e], PartOfSpeech::ADJ));
+    ///
+    /// assert_eq!(word1.distance_with_cost(&word2, &MyDistanceCost), 2);
+    /// ```
+    pub fn distance_with_cost(&self, other: &Word, cost: &impl DistanceCost) -> usize {
+        distance::minimal_edit_distance(self, other, cost)
     }
 
+    /// Calculates the minimal edit distance between this word and another one using custom algorithm.
+    ///
+    /// ```
+    /// use lgg_core::{Word, PartOfSpeech, Sound, word::levenshtein_distance};
+    ///
+    /// let w = Sound::sonorant('w');
+    /// let o = Sound::vowel('o');
+    /// let a = Sound::vowel('a');
+    ///
+    /// let word1 = Word::from(([w, o, a, w], PartOfSpeech::NOUN));
+    /// let word2 = Word::from(([w, a, o, o], PartOfSpeech::NOUN));
+    ///
+    /// assert_eq!(word1.distance_with(&word2, levenshtein_distance), 3);
+    /// assert_eq!(word1.distance(&word2), 2);
+    /// ```
+    pub fn distance_with<F: FnOnce(&Word, &Word) -> usize>(&self, other: &Word, f: F) -> usize {
+        f(self, other)
+    }
+
+    /// Calculates the minimal edit distance between this word and another one using custom algorithm and weights.
+    ///
+    /// ```
+    /// use lgg_core::{Word, PartOfSpeech, Sound, word::{DistanceCost, levenshtein_distance_with_cost}};
+    ///
+    /// pub struct DoubleDistanceCost;
+    ///
+    /// impl DistanceCost for DoubleDistanceCost {
+    ///     fn insert(&self) -> usize { 2 }
+    ///     fn delete(&self) -> usize { 2 }
+    ///     fn transposition(&self) -> usize { 2 }
+    ///     fn substitution(&self) -> usize { 2 }
+    /// }
+    ///
+    /// let w = Sound::sonorant('w');
+    /// let o = Sound::vowel('o');
+    /// let a = Sound::vowel('a');
+    ///
+    /// let word1 = Word::from(([w, o, a, w], PartOfSpeech::NOUN));
+    /// let word2 = Word::from(([w, a, o, o], PartOfSpeech::NOUN));
+    ///
+    /// assert_eq!(word1.distance_with_fn_and_cost(&word2, levenshtein_distance_with_cost, &DoubleDistanceCost), 6);
+    /// assert_eq!(word1.distance(&word2), 2);
+    /// ```
+    pub fn distance_with_fn_and_cost<C: DistanceCost, F: FnOnce(&Word, &Word, &C) -> usize>(&self, other: &Word, f: F, cost: &C) -> usize {
+        f(self, other, cost)
+    }
+
+    /// Creates a new `Word`, replacing all matches of a pattern with another [`Sound`].
     pub fn replace<F, T>(&self, from: &F, to: &T) -> Word 
     where
         F: PartialEq<Sound>,
@@ -57,6 +153,7 @@ impl Word {
         res
     }
 
+    /// Creates a new `Word`, replacing first N matches of a pattern with another [`Sound`].
     pub fn replacen<F, T>(&self, from: &F, to: &T, count: usize) -> Word 
     where
         F: PartialEq<Sound>,
@@ -67,6 +164,7 @@ impl Word {
         res
     }
 
+    /// Replaces all matches of a pattern with another [`Sound`].
     pub fn replace_in<F, T>(&mut self, from: &F, to: &T) 
     where
         F: PartialEq<Sound>,
@@ -79,6 +177,7 @@ impl Word {
         }
     }
 
+    /// Replaces first N matches of a pattern with another [`Sound`].
     pub fn replacen_in<F, T>(&mut self, from: &F, to: &T, count: usize) 
     where
         F: PartialEq<Sound>,
@@ -96,6 +195,10 @@ impl Word {
         }
     }
 
+    /// Attempts to create a new `Word`, replacing all matches of a pattern with another [`Sound`].
+    ///
+    /// # Errors
+    /// Returns the matching type error if the target symbol cannot successfully parse into a [`Sound`].
     pub fn try_replace<F, T>(&self, from: &F, to: &T) -> Result<Word, <T as TryInto<Sound>>::Error>
     where
         F: PartialEq<Sound>,
@@ -104,6 +207,10 @@ impl Word {
         Ok(self.replace(from, &to.clone().try_into()?))
     }
 
+    /// Attempts to create a new `Word`, replacing first N matches of a pattern with another [`Sound`].
+    ///
+    /// # Errors
+    /// Returns the matching type error if the target symbol cannot successfully parse into a [`Sound`].
     pub fn try_replacen<F, T>(&self, from: &F, to: &T, count: usize) -> Result<Word, <T as TryInto<Sound>>::Error> 
     where
         F: PartialEq<Sound>,
@@ -112,6 +219,10 @@ impl Word {
         Ok(self.replacen(from, &to.clone().try_into()?, count))
     }
 
+    /// Attempts to replace all matches of a pattern with another [`Sound`].
+    ///
+    /// # Errors
+    /// Returns the matching type error if the target symbol cannot successfully parse into a [`Sound`].
     pub fn try_replace_in<F, T>(&mut self, from: &F, to: &T) -> Result<(), <T as TryInto<Sound>>::Error>
     where
         F: PartialEq<Sound>,
@@ -123,6 +234,10 @@ impl Word {
         })
     }
 
+    /// Attempts to replace first N matches of a pattern with another [`Sound`].
+    ///
+    /// # Errors
+    /// Returns the matching type error if the target symbol cannot successfully parse into a [`Sound`].
     pub fn try_replacen_in<F, T>(&mut self, from: &F, to: &T, count: usize) -> Result<(), <T as TryInto<Sound>>::Error>
     where
         F: PartialEq<Sound>,
@@ -243,14 +358,50 @@ pub trait DistanceCost {
     
     /// Penalty cost when deleting an existing `Sound`. Defaults to `1`.
     fn delete(&self) -> usize { 1 }
+
+    /// Penalty cost when swaping two successive `Sound`s. Defaults to `1`.
+    fn transposition(&self) -> usize { 1 }
     
-    /// Penalty cost when converting one `Sound` to another. Defaults to `0` if equal, otherwise `1`.
-    fn substitution(&self, first: &Sound, second: &Sound) -> usize {
-        if first == second { 0 } else { 1 }
-    }
+    /// Penalty cost when converting one `Sound` to another. Defaults to `1`.
+    fn substitution(&self) -> usize { 1 }
 }
 
-mod utils {
+/// Function to calculate the Levenshtein minimum edit distance between this word and another one using custom costs.
+pub fn levenshtein_distance_with_cost(first: &Word, second: &Word, cost: &impl DistanceCost) -> usize {
+    let first_len = first.len();
+    let second_len = second.len();
+
+    let mut matrix = vec![vec![0usize; first_len + 1]; second_len + 1];
+
+    for i in 1..=second_len {
+        matrix[i][0] = matrix[i - 1][0] + cost.insert();
+    }
+
+    for i in 1..=first_len {
+        matrix[0][i] = matrix[0][i - 1] + cost.delete();
+    }
+
+    for i in 1..=second_len {
+        for j in 1..=first_len {
+            matrix[i][j] = distance::min(
+                matrix[i - 1][j] + cost.delete(),
+                matrix[i - 1][j - 1] + if first[j - 1] == second[i - 1] { 0 } else { cost.substitution() },
+                matrix[i][j - 1] + cost.insert(),
+            );
+        }
+    }
+        
+    matrix[second_len][first_len]
+}
+
+/// Function to calculate the Levenshtein minimum edit distance between this word and another one using standard uniform costs.
+///
+/// The default implementation weights standard structural mutations (insertions, deletions, substitutions) as `1`.
+pub fn levenshtein_distance(first: &Word, second: &Word) -> usize {
+    levenshtein_distance_with_cost(first, second, &distance::DefaultCost)
+}
+
+mod distance {
     use super::*;
 
     #[derive(Clone, Copy)]
@@ -261,7 +412,7 @@ mod utils {
     pub(super) fn minimal_edit_distance(
         first: &Word,
         second: &Word,
-        cost: impl DistanceCost,
+        cost: &impl DistanceCost,
     ) -> usize {
         let first_len = first.len();
         let second_len = second.len();
@@ -280,16 +431,19 @@ mod utils {
             for j in 1..=first_len {
                 matrix[i][j] = min(
                     matrix[i - 1][j] + cost.delete(),
-                    matrix[i - 1][j - 1] + cost.substitution(&first[j - 1], &second[i - 1]),
+                    matrix[i - 1][j - 1] + if first[j - 1] == second[i - 1] { 0 } else { cost.substitution() },
                     matrix[i][j - 1] + cost.insert(),
                 );
+                if i > 1 && j > 1 && (first[j - 1] == second[i - 2]) && (first[j - 2] == second[i - 1]) {
+                    matrix[i][j] = matrix[i][j].min(matrix[i - 2][j - 2] + cost.transposition());
+                }
             }
         }
-
+        
         matrix[second_len][first_len]
     }
 
-    fn min(first: usize, second: usize, third: usize) -> usize {
+    pub(super) fn min(first: usize, second: usize, third: usize) -> usize {
         first.min(second).min(third)
     }
 }
@@ -326,13 +480,29 @@ mod word_test {
         assert_eq!(word4, word2);
     }
 
+    fn hamming_distance(first: &Word, second: &Word) -> usize {
+        first.iter()
+        .zip(second.iter())
+        .fold(0usize, |acc, (f, s)| acc + if f != s { 1 } else { 0 }) 
+    }
+
     #[test]
     fn distance() {
         let (t, e, a, w, z) = create_simple_alphabet();
 
         let word1 = Word::from(([t, e, e, w, a, z], PartOfSpeech::NOUN));
-        let word2 = Word::from(([t, e, a, w, a, z], PartOfSpeech::NOUN));
+        let word2 = Word::from(([t, e, a, w, z], PartOfSpeech::NOUN));
+        let dist = word1.distance(&word2);
+        assert_eq!(dist, 2);
+
+        let word1 = Word::from(([t, e, a, w, a, z], PartOfSpeech::NOUN));
+        let word2 = Word::from(([t, a, e, w, a, z], PartOfSpeech::NOUN));
         let dist = word1.distance(&word2);
         assert_eq!(dist, 1);
+
+        let word1 = Word::from(([t, e, a, w, a, z], PartOfSpeech::NOUN));
+        let word2 = Word::from(([t, a, e, w, a, z], PartOfSpeech::NOUN));
+        let dist = word1.distance_with(&word2, hamming_distance);
+        assert_eq!(dist, 2);
     }
 }
