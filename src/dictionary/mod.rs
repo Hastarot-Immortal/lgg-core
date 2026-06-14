@@ -30,10 +30,10 @@ mod dictionary_test {
     fn fill_map<M: MapMut<u32, Word>>(map: &mut M) {
         let (s, a, m, v) = create_simple_alphabet();
 
-        map.insert(1, Word::from_slice(&[m, a, s, s], PartOfSpeech::NOUN));
-        map.insert(2, Word::from_slice(&[s, a, m], PartOfSpeech::NOUN));
-        map.insert(3, Word::from_slice(&[s, a, m, s, a], PartOfSpeech::NOUN));
-        map.insert(4, Word::from_slice(&[v, a, s, a], PartOfSpeech::NOUN));
+        map.insert(1, Word::from_slice(&[m, a, s, s], PartOfSpeech::Noun));
+        map.insert(2, Word::from_slice(&[s, a, m], PartOfSpeech::Noun));
+        map.insert(3, Word::from_slice(&[s, a, m, s, a], PartOfSpeech::Noun));
+        map.insert(4, Word::from_slice(&[v, a, s, a], PartOfSpeech::Noun));
     }
 
     #[test] 
@@ -49,7 +49,7 @@ mod dictionary_test {
 
         let mut dict: Dictionary<u32> = Dictionary::new();
         fill_map(&mut dict);
-        assert_eq!(dict.get(&2), Some(&Word::from_slice(&[s, a, m], PartOfSpeech::NOUN)));
+        assert_eq!(dict.get(&2), Some(&Word::from_slice(&[s, a, m], PartOfSpeech::Noun)));
     }
 
     #[test]
@@ -57,9 +57,9 @@ mod dictionary_test {
         let (s, a, m, v) = create_simple_alphabet();
 
         let arr = [
-            (-1i8, Word::from_slice(&[m, a, v], PartOfSpeech::NUM)),
-            (0i8, Word::from_slice(&[s, a, v], PartOfSpeech::VERB)),
-            (1i8, Word::from_slice(&[s, a, m], PartOfSpeech::CONJ)),
+            (-1i8, Word::from_slice(&[m, a, v], PartOfSpeech::Num)),
+            (0i8, Word::from_slice(&[s, a, v], PartOfSpeech::Verb)),
+            (1i8, Word::from_slice(&[s, a, m], PartOfSpeech::Conj)),
         ];
 
         let dict = Dictionary::from_array(arr);
@@ -71,9 +71,9 @@ mod dictionary_test {
         let (s, a, m, v) = create_simple_alphabet();
 
         let vec = vec![
-            (-1i8, Word::from_slice(&[m, a, v], PartOfSpeech::NUM)),
-            (0i8, Word::from_slice(&[s, a, v], PartOfSpeech::VERB)),
-            (1i8, Word::from_slice(&[s, a, m], PartOfSpeech::CONJ)),
+            (-1i8, Word::from_slice(&[m, a, v], PartOfSpeech::Num)),
+            (0i8, Word::from_slice(&[s, a, v], PartOfSpeech::Verb)),
+            (1i8, Word::from_slice(&[s, a, m], PartOfSpeech::Conj)),
         ];
 
         let dict: Dictionary<i8> = Dictionary::from_iter(vec);
@@ -110,11 +110,11 @@ mod dictionary_test {
     fn words_mut() {
         let (s, a, m, v) = create_simple_alphabet();
         let mut dict = Dictionary::new();
-        dict.insert(1, Word::from_slice(&[m, a, s, s], PartOfSpeech::NOUN));
+        dict.insert(1, Word::from_slice(&[m, a, s, s], PartOfSpeech::Noun));
         for w in dict.words_mut() {
             w.push(v);
         }
         let mut iter = dict.iter();
-        assert_eq!(iter.next(), Some((&1, &Word::from_slice(&[m, a, s, s, v], PartOfSpeech::NOUN))));
+        assert_eq!(iter.next(), Some((&1, &Word::from_slice(&[m, a, s, s, v], PartOfSpeech::Noun))));
     }
 }

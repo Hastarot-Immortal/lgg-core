@@ -127,9 +127,9 @@ mod language_test {
         let (t, e, w, z) = create_simple_alphabet();
 
         let mut language = Language::with_capacity(3);
-        language.insert(1, Word::from_slice(&[t, e, w], PartOfSpeech::NOUN));
-        language.insert(2, Word::from_array([z, e, w], PartOfSpeech::VERB));
-        language.insert(3, Word::from_vec(vec![t, e, z], PartOfSpeech::PRON));
+        language.insert(1, Word::from_slice(&[t, e, w], PartOfSpeech::Noun));
+        language.insert(2, Word::from_array([z, e, w], PartOfSpeech::Verb));
+        language.insert(3, Word::from_vec(vec![t, e, z], PartOfSpeech::Pron));
 
         assert_eq!(language.get(&1).map(|word| word.to_string()), Some("tew".to_string()));
         assert_eq!(language.get(&2).map(|word| word.to_string()), Some("zew".to_string()));
@@ -218,7 +218,7 @@ mod language_test {
         word.push(Sound::sonorant('n'));
     });
 
-    rule!(VerbEnding, |word: &mut Word| if word.pos() == PartOfSpeech::VERB {
+    rule!(VerbEnding, |word: &mut Word| if word.pos() == PartOfSpeech::Verb {
         word.push(Sound::vowel('e'));
         word.push(Sound::sonorant('n'));
     });
@@ -232,9 +232,9 @@ mod language_test {
 
         let mut builder = TestLB::new().rules(rules).seed(1);
         let language = builder.build([
-            ("I", PartOfSpeech::PRON),
-            ("love", PartOfSpeech::VERB),
-            ("you", PartOfSpeech::PRON),
+            ("I", PartOfSpeech::Pron),
+            ("love", PartOfSpeech::Verb),
+            ("you", PartOfSpeech::Pron),
         ]);
         assert_eq!(language.get(&"I".to_string()).map(|w| w.to_string()), Some("ewznn".to_string()));
         assert_eq!(language.get(&"love".to_string()).map(|w| w.to_string()), Some("vsteen".to_string()));

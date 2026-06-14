@@ -128,7 +128,7 @@ macro_rules! rule {
 #[cfg(test)]
 mod rule_test {
 	use super::*;
-	use crate::{ Sound, PartOfSpeech::NOUN, Dictionary };
+	use crate::{ Sound, PartOfSpeech::Noun, Dictionary };
 
 	rule!(Rule1, move |word: &mut Word| word.swap(0, 1));
 	
@@ -154,10 +154,10 @@ mod rule_test {
 		let a = Sound::vowel('a');
 		let e = Sound::vowel('e');
 
-		let mut word = Word::from_slice(&[a, e], NOUN);
+		let mut word = Word::from_slice(&[a, e], Noun);
 		let rule = Rule1;
 		rule.apply(&mut word);
-		assert_eq!(word, Word::from_slice(&[e, a], NOUN));
+		assert_eq!(word, Word::from_slice(&[e, a], Noun));
 	}
 
 	#[test]
@@ -165,7 +165,7 @@ mod rule_test {
 		let a = Sound::vowel('a');
 		let m = Sound::sonorant('m');
 
-		let mut word = Word::from_slice(&[m, a, m, a], NOUN);
+		let mut word = Word::from_slice(&[m, a, m, a], Noun);
 		Rule2::apply_static(&mut word);
 
 		assert_eq!(word.to_string().as_str(), "meamea");
@@ -177,7 +177,7 @@ mod rule_test {
 		let s = Sound::voiceless('s');
 		let m = Sound::sonorant('m');
 
-		let mut word1 = Word::from_slice(&[m, a, s, a], NOUN);
+		let mut word1 = Word::from_slice(&[m, a, s, a], Noun);
 		let mut word2 = word1.clone();
 
 		let rule = Rule3 { param: 2 };
@@ -195,9 +195,9 @@ mod rule_test {
 		let m = Sound::sonorant('m');
 
 		let mut words = vec![
-			Word::from_slice(&[e, m, m, a], NOUN),
-			Word::from_slice(&[m, e, m, a], NOUN),
-			Word::from_slice(&[a, m, m, a], NOUN),
+			Word::from_slice(&[e, m, m, a], Noun),
+			Word::from_slice(&[m, e, m, a], Noun),
+			Word::from_slice(&[a, m, m, a], Noun),
 		];
 		let rule = Rule2;
 		rule.apply_iter(&mut words.iter_mut());
@@ -213,9 +213,9 @@ mod rule_test {
 		let m = Sound::sonorant('m');
 
 		let mut dict = Dictionary::from_vec(vec![
-			(1, Word::from_slice(&[a, m, m, a], NOUN)),
-			(2, Word::from_slice(&[e, m, a], NOUN)),
-			(3, Word::from_slice(&[a, m, a], NOUN)),
+			(1, Word::from_slice(&[a, m, m, a], Noun)),
+			(2, Word::from_slice(&[e, m, a], Noun)),
+			(3, Word::from_slice(&[a, m, a], Noun)),
 		]);
 		
 		Rule2::apply_iter_static(&mut dict.iter_mut().map(|(_, w)| w));
@@ -231,7 +231,7 @@ mod rule_test {
 		let e = Sound::vowel('e');
 		let m = Sound::sonorant('m');
 
-		let mut word1 = Word::from_slice(&[e, m, m, a], NOUN);
+		let mut word1 = Word::from_slice(&[e, m, m, a], Noun);
 		let mut word2 = word1.clone();
 
 		let rule = Rule2;
