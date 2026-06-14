@@ -33,11 +33,11 @@ impl AlphabetIndex for usize {
 	type Output = Sound;
 
 	fn get(self, alphabet: &Alphabet) -> Option<&Sound> {
-		alphabet.storage.get(self).map(|u| &u.sound)
+		alphabet.storage.get(self)
 	}
 
 	fn index(self, alphabet: &Alphabet) -> &Sound {
-		&alphabet.storage[self].sound
+		&alphabet.storage[self]
 	}
 }
 
@@ -57,7 +57,7 @@ impl AlphabetIndex for Option<usize> {
 	type Output = Sound;
 
 	fn get(self, alphabet: &Alphabet) -> Option<&Sound> {
-		self.map(|idx| alphabet.storage.get(idx).map(|u| &u.sound)).flatten()
+		self.map(|idx| alphabet.storage.get(idx)).flatten()
 	}
 
 	fn index(self, alphabet: &Alphabet) -> &Sound {

@@ -1,20 +1,16 @@
 use std::{
     ops::{Deref, DerefMut, Sub, SubAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Not},
-    iter::Map,
     vec::IntoIter as VecIntoIter,
     slice::Iter as SliceIter,
 };
 use crate::{
     Sound, 
     VoiceLevel,
-    alphabet::{
-        Alphabet, 
-        alphabet::AlphabetUnit
-    },
+    alphabet::Alphabet,
 };
 
 pub struct IntoIter {
-    inner: Map<VecIntoIter<AlphabetUnit>, fn(AlphabetUnit) -> Sound>,
+    inner: VecIntoIter<Sound>,
 }
 
 impl Iterator for IntoIter {
@@ -31,13 +27,13 @@ impl IntoIterator for Alphabet {
 
     fn into_iter(self) -> Self::IntoIter {
         IntoIter {
-            inner: self.storage.into_iter().map(|s| s.sound)
+            inner: self.storage.into_iter()
         }
     }
 }
 
 pub struct Iter<'a> {
-    inner: Map<SliceIter<'a, AlphabetUnit>, fn(&'a AlphabetUnit) -> &'a Sound>,
+    inner: SliceIter<'a, Sound>,
 }
 
 impl<'a> Iterator for Iter<'a> {
@@ -54,7 +50,7 @@ impl<'a> IntoIterator for &'a Alphabet {
 
     fn into_iter(self) -> Self::IntoIter {
         Iter {
-            inner: self.storage.iter().map(|s| &s.sound)
+            inner: self.storage.iter()
         }
     }
 }
