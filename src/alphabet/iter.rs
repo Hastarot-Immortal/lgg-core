@@ -1,5 +1,5 @@
 use std::{
-    ops::{Deref, DerefMut, Sub, SubAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Not},
+    ops::{Index, Sub, SubAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Not},
     vec::IntoIter as VecIntoIter,
     slice::Iter as SliceIter,
 };
@@ -60,17 +60,23 @@ pub struct Indexes {
     pub(crate) inner: Vec<usize>,
 }
 
-impl Deref for Indexes {
-    type Target = Vec<usize>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
+impl Indexes {
+    pub fn len(&self) -> usize {
+        self.inner.len()
     }
 }
 
-impl DerefMut for Indexes {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
+impl Into<Vec<usize>> for Indexes {
+    fn into(self) -> Vec<usize> {
+        self.inner
+    }
+}
+
+impl Index<usize> for Indexes {
+    type Output = usize;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.inner[index]
     }
 }
 
