@@ -6,6 +6,19 @@ use std::{
 };
 
 /// A structural representation of a language, encapsulating an underlying vocabulary mapping system.
+///
+/// It acts as a wrapper around a [`Dictionary`], providing methods to build, extend, 
+/// and manage a localized collection of words and their associated meanings or identifiers.
+///
+/// ```
+/// use lgg_core::{Language, Word, PartOfSpeech, Sound};
+///
+/// let mut lang = Language::new();
+/// let word = Word::from_slice(&[Sound::voiceless('t'), Sound::vowel('e')], PartOfSpeech::Noun);
+/// 
+/// lang.insert("tree".to_string(), word);
+/// assert!(lang.contains(&"tree".to_string()));
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Language<I, M=DefaultMap<I, Word>> {
 	dictionary: Dictionary<I, M>,
@@ -16,6 +29,13 @@ where
 	I: Hash + Eq,
 {
     /// Instantiates an empty `Language`.
+    ///
+    /// ```
+    /// use lgg_core::Language;
+    ///
+    /// let lang: Language<String> = Language::new();
+    /// assert!(lang.is_empty());
+    /// ```
 	pub fn new() -> Self {
         Self {
             dictionary: Dictionary::new(),
@@ -23,6 +43,12 @@ where
     }
 
     /// Instantiates an empty `Language` pre-allocated to hold a minimum capacity of elements.
+    ///
+    /// ```
+    /// use lgg_core::Language;
+    ///
+    /// let lang: Language<u32> = Language::with_capacity(100);
+    /// ```
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             dictionary: Dictionary::with_capacity(capacity)
@@ -30,10 +56,29 @@ where
     }
 
     /// Generates a `Language` from a fixed array of key-word entries.
+    ///
+    /// ```
+    /// use lgg_core::{Language, Word, PartOfSpeech};
+    ///
+    /// let word = Word::from_array([], PartOfSpeech::Noun);
+    /// let lang = Language::from_array([("hello", word)]);
+    /// 
+    /// assert_eq!(lang.len(), 1);
+    /// ```
     pub fn from_array<const N: usize>(arr: [(I, Word); N]) -> Self {
         <Self as From<[(I, Word); N]>>::from(arr)
     }
+    
     /// Generates a `Language` from an owned vector of key-word entries.
+    ///
+    /// ```
+    /// use lgg_core::{Language, Word, PartOfSpeech};
+    ///
+    /// let word = Word::from_array([], PartOfSpeech::Verb);
+    /// let lang = Language::from_vec(vec![(42u32, word)]);
+    /// 
+    /// assert_eq!(lang.len(), 1);
+    /// ```
     pub fn from_vec(vec: Vec<(I, Word)>) -> Self {
         Self {
             dictionary: Dictionary::from_iter(vec),
@@ -84,42 +129,72 @@ impl<I, M> DerefMut for Language<I, M> {
 }
 
 /// A factory trait for generating an entirely new [`Language`] instance.
+/// 
+/// Implementors can use this trait to define custom phonetic synthesis, generation pipelines,
+/// or stateful procedural language builders.
 pub trait LanguageBuilder<T, M=DefaultMap<T, Word>> {
 
     /// Instantiates an empty configuration state for the builder.
     fn new() -> Self;
 
     /// Consumes or reads the specified abstract items, running phonetic synthesis or mutation pipelines, 
-    /// and constructs a [`Language`].
+    /// and constructs a fully populated [`Language`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use lgg_core::{Language, LanguageBuilder, PartOfSpeech};
+    /// # struct MyBuilder;
+    /// # impl LanguageBuilder<String> for MyBuilder {
+    /// #     fn new() -> Self { MyBuilder }
+    /// #     fn build<U: Into<String>, I: IntoIterator<Item=(U, PartOfSpeech)>>(&mut self, words: I) -> Language<String> { Language::new() }
+    /// # }
+    ///
+    /// let mut builder = MyBuilder::new();
+    /// let lang = builder.build([("water", PartOfSpeech::Noun)]);
+    /// ```
     fn build< U: Into<T>, I: IntoIterator<Item=(U, PartOfSpeech)>>(&mut self, words: I) -> Language<T, M>;
 }
 
 /// Allows a builder to accept a chained collection of morphological [`Rule`] items.
+///
+/// This configuration trait is useful for attaching sequential phonological rules 
+/// to a language constructor pipeline before generation.
 pub trait WithRules {
+    /// Consumes the builder state and updates it with the provided sequence of dynamic [`Rule`] transformers.
     fn rules<I>(self, rules: I) -> Self
     where
         I: IntoIterator<Item=Box<dyn Rule>>;
 }
 
-/// Allows a builder to accept seed for pseudo-random deterministic generators.
+/// Allows a builder to accept seed values for deterministic pseudo-random generators.
 pub trait WithSeed {
+    /// The structural type of the random seed configuration.
 	type Seed;
+
+	/// Attaches a deterministic generation seed modifier to the builder structure.
 	fn seed(self, seed: Self::Seed) -> Self;
 }
 
-/// Allows a builder to accept [`Alphabet`] object.
+/// Allows a builder to accept an explicit phonetic [`Alphabet`] specification object.
 #[cfg(feature="alphabet")]
 pub trait WithAlphabet {
+    /// Configures the language builder framework to draw parameters from the given target alphabet.
     fn alphabet<A: Into<crate::alphabet::Alphabet>>(self, alphabet: A) -> Self;
 }
 
 /// A trait for extending an already existing [`Language`] with a set of new words.
 pub trait LanguageExtender<T, M=DefaultMap<T, Word>> {
+    /// Evaluates or creates words out of the raw entries iterator, appending results in-place into the target language.
     fn extend<I: IntoIterator<Item=(T, Word)>>(&mut self, language: &mut Language<T, M>, words: I);
 }
 
-/// A trait for transforming an already existing [`Language`] into new `Language` object.
+/// A trait for transforming an already existing [`Language`] into a completely new `Language` object.
+///
+/// This can be used to simulate historical sound changes, dialectal drift, or morphological evolution 
+/// mapping across vocabulary sets.
 pub trait LanguageTransformer<I, M=DefaultMap<I, Word>, T=I, N=M> {
+    /// Evaluates the existing dictionary framework rules to map out and output an entirely updated language generation.
     fn transform(&mut self, language: &Language<I, M>) -> Language<T, N>;
 }
 
