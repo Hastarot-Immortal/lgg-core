@@ -23,9 +23,21 @@ mod sealed {
 	impl<K> Sealed for Vec<K> where K: TryAsSound {}
 }
 
+/// A sealed trait powering polymorphic immutable lookups inside an [`Alphabet`].
 pub trait AlphabetIndex: sealed::Sealed {
+	/// The mapped resulting reference type produced by an indexing operation.
 	type Output;
+
+	/// Safely attempts to resolve a shared reference matching this query inside the alphabet.
+  ///
+  /// Returns [`None`] if the query position falls outside valid allocation bounds or if a string search misses.
 	fn get(self, alphabet: &Alphabet) -> Option<&Self::Output>;
+
+	/// Force-indexes into the alphabet, returning a shared reference.
+  ///
+  /// # Panics
+  ///
+  /// Panics if the location query misses or is outside the valid range.
 	fn index(self, alphabet: &Alphabet) -> &Self::Output;
 }
 
@@ -94,8 +106,14 @@ where
 	}
 }
 
+/// A sealed trait powering slice extraction, bulk cloning, and complex sound collection queries.
 pub trait AlphabetIndexOwned: sealed::Sealed {
+	/// The owned collection type synthesized from evaluating this index pattern against the alphabet.
 	type Owned;
+
+	/// Evaluates the sequence criteria against the alphabet pool, reconstructing an owned copy of matched items.
+	///
+  /// Returns [`None`] if any fragment inside the collective query sequence fails evaluation metrics.
 	fn get_owned(self, alphabet: &Alphabet) -> Option<Self::Owned>;
 }
 

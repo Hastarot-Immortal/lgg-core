@@ -10,6 +10,7 @@ use std::ops::Index;
 
 pub type AlphabetKey = [u8; 6];
 
+/// An ordered pool of unique [`Sound`] instances acting as an alphabet framework.
 pub struct Alphabet {
     pub(super) storage: Vec<Sound>,
 }
@@ -37,24 +38,38 @@ impl<const N: usize> From<[Sound; N]> for Alphabet {
 }
 
 impl Alphabet {
+    /// Safely fetches a reference out of the alphabet based on a custom identifier index.
+    ///
+    /// Returns [`None`] if the target index pattern is out of bounds or unfound.
     pub fn get<I: AlphabetIndex>(&self, idx: I) -> Option<&I::Output> {
         idx.get(self)
     }
 
+    /// Safely fetches a copied or synthesized owned representation from the alphabet.
+    ///
+    /// Returns [`None`] if the target index pattern is out of bounds or unfound.
     pub fn get_owned<I: AlphabetIndexOwned>(&self, idx: I) -> Option<I::Owned> {
         idx.get_owned(self)
     }
 
+    /// Returns the total number of unique phonetic sounds present in the alphabet.
     pub fn len(&self) -> usize {
         self.storage.len()
     }
 
+    /// Returns `true` if the alphabet contains no phonetic sounds.
+    pub fn is_empty(&self) -> bool {
+        self.storage.is_empty()
+    }
+
+    /// Generates a comprehensive collection of numerical position keys tracking every element inside this alphabet.
     pub fn indexes(&self) -> Indexes {
         Indexes {
             inner: (0..self.len()).collect(),
         }
     }
-
+                            
+    /// Scans the alphabet pool using a closure predicate, collecting the matching array locations.
     pub fn indexes_by<F: Fn(&Sound) -> bool>(&self, f: F) -> Indexes {
         Indexes {
             inner: self
@@ -66,6 +81,9 @@ impl Alphabet {
         }
     }
 
+    /// Scans the alphabet using an efficient bitmask lookup, collecting positions of items matching specific voice categories.
+    ///
+    /// Useful for isolating sound profiles such as matching all vowels or sonorants in one sweep.
     pub fn indexes_by_voice_level<I: Into<VoiceLevelSet>>(&self, levels: I) -> Indexes {
         let vl_set = levels.into();
         Indexes {
@@ -90,6 +108,10 @@ where
     I: AlphabetIndex
 {
     type Output = I::Output;
+
+    /// Direct panic-prone shortcut accessor indexing into the alphabet. 
+    ///
+    /// Prefer calling [`Alphabet::get`] for graceful fallback handling.
     fn index(&self, idx: I) -> &Self::Output {
         idx.index(self)
     }

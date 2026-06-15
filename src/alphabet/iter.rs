@@ -9,6 +9,7 @@ use crate::{
     alphabet::Alphabet,
 };
 
+/// An owned iterator that consumes an [`Alphabet`] and yields its [`Sound`] tokens.
 pub struct IntoIter {
     inner: VecIntoIter<Sound>,
 }
@@ -32,6 +33,7 @@ impl IntoIterator for Alphabet {
     }
 }
 
+/// A borrowed iterator yielding immutable references to the [`Sound`] tokens inside an [`Alphabet`].
 pub struct Iter<'a> {
     inner: SliceIter<'a, Sound>,
 }
@@ -55,14 +57,24 @@ impl<'a> IntoIterator for &'a Alphabet {
     }
 }
 
+/// A collection of structural index allocations pointing into an [`Alphabet`].
+///
+/// This type is typically produced by targeted filtering lookups, such as isolating 
+/// specific sound parameters or sound classes.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Indexes {
     pub(crate) inner: Vec<usize>,
 }
 
 impl Indexes {
+    /// Returns the number of index coordinates contained in this batch view.
     pub fn len(&self) -> usize {
         self.inner.len()
+    }
+
+    /// Returns `true` if the index tracker sequence is empty.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 }
 
@@ -107,11 +119,33 @@ impl<'a> IntoIterator for &'a mut Indexes {
     }
 }
 
+/// An optimized bitmask set representing a combination of acoustic [`VoiceLevel`] classifications.
+///
+/// Standard set-algebra operations are provided using overloaded math operators:
+/// * `&` ([`BitAnd`]): Intersection of voice classifications.
+/// * `|` ([`BitOr`]): Union of voice classifications.
+/// * `-` ([`Sub`]): Relative complement (difference) of voice classifications.
+/// * `!` ([`Not`]): Inversion/complement of the voice profile.
+///
+/// # Example
+///
+/// ```
+/// use lgg_core::{VoiceLevel::*, alphabet::VoiceLevelSet};
+///
+/// let mut vl_set = VoiceLevelSet::ALL - Sonorant;
+/// vl_set &= [Sonorant, Vowel, Voice];
+/// vl_set |= Voiceless;
+///
+/// assert_eq!(!vl_set,  VoiceLevelSet::from([Breathy, Creaky, Sonorant]));
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct VoiceLevelSet(pub(crate) u8);
 
 impl VoiceLevelSet {
+    /// A preset set containing every single available variant classification flag inside [`VoiceLevel`].
     pub const ALL: VoiceLevelSet = VoiceLevelSet(0b11_1111);
+
+    pub const CONSONANTS: VoiceLevelSet = VoiceLevelSet(0b1_1111);
 }
 
 impl<Rhs> Sub<Rhs> for VoiceLevelSet
@@ -119,7 +153,8 @@ where
     Rhs: Into<VoiceLevelSet>
 {
     type Output = VoiceLevelSet;
-
+    
+    /// Computes the set difference, stripping the right-hand acoustic qualities out of this set.
     fn sub(mut self, other: Rhs) -> Self::Output {
         self.0 &= !other.into().0;
         self
@@ -130,6 +165,7 @@ impl<Rhs> SubAssign<Rhs> for VoiceLevelSet
 where
     Rhs: Into<VoiceLevelSet>
 {
+    /// Subtracts the right-hand acoustic qualities from this set in-place.
     fn sub_assign(&mut self, other: Rhs) {
         self.0 &= !(other.into().0) & 0b11_1111;
     }
@@ -141,6 +177,7 @@ where
 {
     type Output = VoiceLevelSet;
 
+    /// Computes the set intersection, extracting only the shared overlapping voice configurations.
     fn bitand(mut self, other: Rhs) -> Self::Output {
         self.0 &= other.into().0;
         self
@@ -151,6 +188,7 @@ impl<Rhs> BitAndAssign<Rhs> for VoiceLevelSet
 where
     Rhs: Into<VoiceLevelSet>
 {
+    /// Retains only the shared overlapping configurations present in both sets in-place.
     fn bitand_assign(&mut self, other: Rhs) {
         self.0 &= other.into().0;
     }
@@ -162,6 +200,7 @@ where
 {
     type Output = VoiceLevelSet;
 
+    /// Computes the set union, joining both collections of voice configurations together.
     fn bitor(mut self, other: Rhs) -> Self::Output {
         self.0 |= other.into().0;
         self
@@ -172,6 +211,7 @@ impl<Rhs> BitOrAssign<Rhs> for VoiceLevelSet
 where
     Rhs: Into<VoiceLevelSet>
 {
+    /// Unions both collections of voice configurations together in-place.
     fn bitor_assign(&mut self, other: Rhs) {
         self.0 |= other.into().0;
     }
@@ -180,6 +220,7 @@ where
 impl Not for VoiceLevelSet {
     type Output = VoiceLevelSet;
 
+    /// Inverts the set selection, matching all voice levels *not* explicitly contained within this mask.
     fn not(self) -> Self::Output {
         VoiceLevelSet(!self.0 & 0b11_1111)
     }
