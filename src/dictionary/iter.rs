@@ -12,6 +12,16 @@ use std::marker::PhantomData;
 /// An iterator over shared references to the [`Word`] values stored in a [`Dictionary`].
 ///
 /// This struct is created by the [`words`](Dictionary::words) method on [`Dictionary`].
+///
+/// ```
+/// use lgg_core::{Dictionary, Word, PartOfSpeech};
+///
+/// let mut dict = Dictionary::new();
+/// dict.insert(1, Word::from_array([], PartOfSpeech::Noun));
+/// 
+/// let mut words_iter = dict.words();
+/// assert!(words_iter.next().is_some());
+/// ```
 pub struct Words<'a, M: Iter + 'a> {
     inner: M::Iter<'a>,
 }
@@ -43,6 +53,17 @@ where
 /// An iterator over mutable references to the [`Word`] values stored in a [`Dictionary`].
 ///
 /// This struct is created by the [`words_mut`](Dictionary::words_mut) method on [`Dictionary`].
+///
+/// ```
+/// use lgg_core::{Dictionary, Word, PartOfSpeech, Sound};
+///
+/// let mut dict = Dictionary::new();
+/// dict.insert(1, Word::from_array([], PartOfSpeech::Noun));
+/// 
+/// for word in dict.words_mut() {
+///     word.push(Sound::voiceless('s'));
+/// }
+/// ```
 pub struct WordsMut<'a, M: IterMut + 'a> {
     inner: M::IterMut<'a>,
 }
@@ -73,7 +94,7 @@ where
 
 /// An iterator over shared key-value pairs `(&I, &Word)` stored in a [`Dictionary`].
 ///
-/// This struct is created by the [`iter`](MapIter::iter) implementation on [`Dictionary`].
+/// This struct is created by the [`iter`](Dictionary::iter) method on [`Dictionary`].
 pub struct DictIter<'a, I: 'a, M: MapIter + 'a> {
 	inner: M::Iter<'a>,
 	_id_type: PhantomData<I>,
@@ -112,7 +133,7 @@ where
 
 /// An iterator over mutable key-value pairs `(&I, &mut Word)` stored in a [`Dictionary`].
 ///
-/// This struct is created by the [`iter_mut`](MapIterMut::iter_mut) implementation on [`Dictionary`].
+/// This struct is created by the [`iter_mut`](Dictionary::iter_mut) method on [`Dictionary`].
 pub struct DictIterMut<'a, I: 'a, M: MapIterMut + 'a> {
 	inner: M::IterMut<'a>,
 	_id_type: PhantomData<I>,

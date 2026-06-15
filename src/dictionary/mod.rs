@@ -1,3 +1,22 @@
+//! Vocabulary lookup and map-iterator tracking module.
+//!
+//! This module provides the central [`Dictionary`] structure along with specialized iterator 
+//! implementations designed to yield shared, mutable, or paired references to programmatic words.
+//!
+//! # Examples
+//!
+//! ```
+//! use lgg_core::dictionary::{Dictionary, Words};
+//! use lgg_core::{Word, PartOfSpeech};
+//!
+//! let mut dict = Dictionary::new();
+//! dict.insert(1u32, Word::from_array([], PartOfSpeech::Noun));
+//!
+//! // Extract a shared iterator over all words inside the collection
+//! let mut word_stream: Words<'_, _> = dict.words();
+//! assert!(word_stream.next().is_some());
+//! ```
+
 pub mod dictionary;
 pub mod iter;
 
