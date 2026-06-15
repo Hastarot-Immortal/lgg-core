@@ -14,11 +14,38 @@ pub struct Word {
 
 impl Word {
     /// Instantiates a word from a `Vec` of [`Sound`].
+    ///
+    /// ```
+    /// use lgg_core::{Word, PartOfSpeech, Sound};
+    ///
+    /// let sounds = vec![
+    ///     Sound::voiceless('s'),
+    ///     Sound::vowel('e'),
+    ///     Sound::vowel('a'),
+    /// ];
+    ///
+    /// let word = Word::from_vec(sounds, PartOfSpeech::Noun);
+    ///
+    /// assert_eq!(word, "sea");
+    /// ```
     pub fn from_vec(sounds: Vec<Sound>, pos: PartOfSpeech) -> Self {
         Self { sounds, pos }
     }
 
     /// Instantiates a word from a slice of [`Sound`].
+    ///
+    ///```
+    /// use lgg_core::{Word, PartOfSpeech, Sound};
+    ///
+    /// let word = Word::from_slice([
+    ///     Sound::voiceless('f'),
+    ///     Sound::vowel('e'),
+    ///     Sound::vowel('a'),
+    ///     Sound::sonorant('r'),
+    /// ].as_slice(), PartOfSpeech::Noun);
+    ///
+    /// assert_eq!(word, "fear");
+    ///```
     pub fn from_slice(sounds: &[Sound], pos: PartOfSpeech) -> Self {
         Self {
             sounds: Vec::from(sounds),
@@ -143,6 +170,21 @@ impl Word {
     }
 
     /// Creates a new `Word`, replacing all matches of a pattern with another [`Sound`].
+    ///
+    /// ```
+    /// use lgg_core::{Word, PartOfSpeech, Sound};
+    ///
+    /// let s = Sound::voiceless('s');
+    /// let a = Sound::vowel('a');
+    /// let z = Sound::voice('z');
+    /// let w = Sound::sonorant('w');
+    ///
+    /// let word = Word::from(([s, a, w, s, a], PartOfSpeech::Noun));
+    ///
+    /// let new_word = word.replace(&s, &z);
+    ///
+    /// assert_eq!(new_word, "zawza");
+    /// ```
     pub fn replace<F, T>(&self, from: &F, to: &T) -> Word 
     where
         F: PartialEq<Sound>,
@@ -154,6 +196,20 @@ impl Word {
     }
 
     /// Creates a new `Word`, replacing first N matches of a pattern with another [`Sound`].
+    ///
+    /// ```
+    /// use lgg_core::{Word, PartOfSpeech, Sound};
+    ///
+    /// let t = Sound::voiceless('t');
+    /// let a = Sound::vowel('a');
+    /// let d = Sound::voice('d');
+    ///
+    /// let word = Word::from(([t, a, t, t, a, t], PartOfSpeech::Noun));
+    ///
+    /// let new_word = word.replacen(&t, &d, 2);
+    ///
+    /// assert_eq!(new_word, "dadtat");
+    /// ```
     pub fn replacen<F, T>(&self, from: &F, to: &T, count: usize) -> Word 
     where
         F: PartialEq<Sound>,
@@ -165,6 +221,20 @@ impl Word {
     }
 
     /// Replaces all matches of a pattern with another [`Sound`].
+    ///
+    /// ```
+    /// use lgg_core::{Word, PartOfSpeech, Sound};
+    ///
+    /// let t = Sound::voiceless('t');
+    /// let a = Sound::vowel('a');
+    /// let s = Sound::voice('s');
+    ///
+    /// let mut word = Word::from(([t, a, s, t], PartOfSpeech::Pron));
+    ///
+    /// word.replace_in(&t, &s);
+    ///
+    /// assert_eq!(word, "sass");
+    /// ```
     pub fn replace_in<F, T>(&mut self, from: &F, to: &T) 
     where
         F: PartialEq<Sound>,
@@ -178,6 +248,20 @@ impl Word {
     }
 
     /// Replaces first N matches of a pattern with another [`Sound`].
+    ///
+    /// ```
+    /// use lgg_core::{Word, PartOfSpeech, Sound};
+    ///
+    /// let t = Sound::voiceless('t');
+    /// let a = Sound::vowel('a');
+    /// let s = Sound::voice('s');
+    ///
+    /// let mut word = Word::from(([t, a, s, t], PartOfSpeech::Pron));
+    ///
+    /// word.replacen_in(&t, &s, 1);
+    ///
+    /// assert_eq!(word, "sast");
+    /// ```
     pub fn replacen_in<F, T>(&mut self, from: &F, to: &T, count: usize) 
     where
         F: PartialEq<Sound>,
@@ -199,6 +283,20 @@ impl Word {
     ///
     /// # Errors
     /// Returns the matching type error if the target symbol cannot successfully parse into a [`Sound`].
+    ///
+    /// ```
+    /// use lgg_core::{Word, PartOfSpeech, Sound, VoiceLevel};
+    ///
+    /// let s = Sound::voiceless('s');
+    /// let a = Sound::vowel('a');
+    /// let z = Sound::voice('z');
+    ///
+    /// let word = Word::from(([s, a, z, a], PartOfSpeech::Noun));
+    ///
+    /// let new_word = word.try_replace(&a, &("ea", VoiceLevel::Vowel));
+    ///
+    /// assert_eq!(new_word.map(|w| w.to_string()), Ok("seazea".to_string()));
+    /// ```
     pub fn try_replace<F, T>(&self, from: &F, to: &T) -> Result<Word, <T as TryInto<Sound>>::Error>
     where
         F: PartialEq<Sound>,
@@ -211,6 +309,19 @@ impl Word {
     ///
     /// # Errors
     /// Returns the matching type error if the target symbol cannot successfully parse into a [`Sound`].
+    ///
+    /// ```
+    /// use lgg_core::{Word, PartOfSpeech, Sound, VoiceLevel};
+    ///
+    /// let a = Sound::vowel('a');
+    /// let z = Sound::voice('z');
+    ///
+    /// let word = Word::from(([z, a, z, a], PartOfSpeech::Noun));
+    ///
+    /// let new_word = word.try_replacen(&a, &("ea", VoiceLevel::Vowel), 1);
+    ///
+    /// assert_eq!(new_word.map(|w| w.to_string()), Ok("zeaza".to_string()));
+    /// ```
     pub fn try_replacen<F, T>(&self, from: &F, to: &T, count: usize) -> Result<Word, <T as TryInto<Sound>>::Error> 
     where
         F: PartialEq<Sound>,
@@ -223,6 +334,20 @@ impl Word {
     ///
     /// # Errors
     /// Returns the matching type error if the target symbol cannot successfully parse into a [`Sound`].
+    ///
+    /// ```
+    /// use lgg_core::{Word, PartOfSpeech, Sound, VoiceLevel};
+    ///
+    /// let t = Sound::voiceless('t');
+    /// let a = Sound::vowel('a');
+    /// let d = Sound::voice('d');
+    ///
+    /// let mut word = Word::from(([t, a, d, a], PartOfSpeech::Noun));
+    ///
+    /// word.try_replace_in(&a, &("ea", VoiceLevel::Vowel));
+    ///
+    /// assert_eq!(word, "teadea");
+    /// ```
     pub fn try_replace_in<F, T>(&mut self, from: &F, to: &T) -> Result<(), <T as TryInto<Sound>>::Error>
     where
         F: PartialEq<Sound>,
@@ -238,6 +363,19 @@ impl Word {
     ///
     /// # Errors
     /// Returns the matching type error if the target symbol cannot successfully parse into a [`Sound`].
+    ///
+    /// ```
+    /// use lgg_core::{Word, PartOfSpeech, Sound, VoiceLevel};
+    ///
+    /// let t = Sound::voiceless('t');
+    /// let a = Sound::vowel('a');
+    ///
+    /// let mut word = Word::from(([t, a, t, a], PartOfSpeech::Noun));
+    ///
+    /// word.try_replacen_in(&a, &("ou", VoiceLevel::Vowel), 1);
+    ///
+    /// assert_eq!(word, "touta");
+    /// ```
     pub fn try_replacen_in<F, T>(&mut self, from: &F, to: &T, count: usize) -> Result<(), <T as TryInto<Sound>>::Error>
     where
         F: PartialEq<Sound>,
