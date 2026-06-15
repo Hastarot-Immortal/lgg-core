@@ -5,6 +5,7 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
+/// A structural representation of a language, encapsulating an underlying vocabulary mapping system.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Language<I, M=DefaultMap<I, Word>> {
 	dictionary: Dictionary<I, M>,
@@ -14,22 +15,25 @@ impl<I> Language<I>
 where
 	I: Hash + Eq,
 {
+    /// Instantiates an empty `Language`.
 	pub fn new() -> Self {
         Self {
             dictionary: Dictionary::new(),
         }
     }
 
+    /// Instantiates an empty `Language` pre-allocated to hold a minimum capacity of elements.
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             dictionary: Dictionary::with_capacity(capacity)
         }
     }
 
+    /// Generates a `Language` from a fixed array of key-word entries.
     pub fn from_array<const N: usize>(arr: [(I, Word); N]) -> Self {
         <Self as From<[(I, Word); N]>>::from(arr)
     }
-
+    /// Generates a `Language` from an owned vector of key-word entries.
     pub fn from_vec(vec: Vec<(I, Word)>) -> Self {
         Self {
             dictionary: Dictionary::from_iter(vec),
@@ -79,31 +83,42 @@ impl<I, M> DerefMut for Language<I, M> {
     }
 }
 
+/// A factory trait for generating an entirely new [`Language`] instance.
 pub trait LanguageBuilder<T, M=DefaultMap<T, Word>> {
+
+    /// Instantiates an empty configuration state for the builder.
     fn new() -> Self;
+
+    /// Consumes or reads the specified abstract items, running phonetic synthesis or mutation pipelines, 
+    /// and constructs a [`Language`].
     fn build< U: Into<T>, I: IntoIterator<Item=(U, PartOfSpeech)>>(&mut self, words: I) -> Language<T, M>;
 }
 
+/// Allows a builder to accept a chained collection of morphological [`Rule`] items.
 pub trait WithRules {
     fn rules<I>(self, rules: I) -> Self
     where
         I: IntoIterator<Item=Box<dyn Rule>>;
 }
 
+/// Allows a builder to accept seed for pseudo-random deterministic generators.
 pub trait WithSeed {
 	type Seed;
 	fn seed(self, seed: Self::Seed) -> Self;
 }
 
+/// Allows a builder to accept [`Alphabet`] object.
 #[cfg(feature="alphabet")]
 pub trait WithAlphabet {
     fn alphabet<A: Into<crate::alphabet::Alphabet>>(self, alphabet: A) -> Self;
 }
 
+/// A trait for extending an already existing [`Language`] with a set of new words.
 pub trait LanguageExtender<T, M=DefaultMap<T, Word>> {
     fn extend<I: IntoIterator<Item=(T, Word)>>(&mut self, language: &mut Language<T, M>, words: I);
 }
 
+/// A trait for transforming an already existing [`Language`] into new `Language` object.
 pub trait LanguageTransformer<I, M=DefaultMap<I, Word>, T=I, N=M> {
     fn transform(&mut self, language: &Language<I, M>) -> Language<T, N>;
 }

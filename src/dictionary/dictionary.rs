@@ -30,6 +30,11 @@ use cc_traits::{
     MapIterMut,
 };
 
+/// A lookup collection mapping unique keys of type `I` to programmatic [`Word`] tokens.
+///
+/// ### Type Parameters
+/// * `I`: The identifier type used as a lookup key (e.g., an integer ID, or a string slice).
+/// * `M`: The underlying collection map type. Defaults to a performance-optimized [`FastMap<I, Word>`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Dictionary<I, M = FastMap<I, Word>> {
     pub(crate) words: M,
@@ -40,6 +45,7 @@ impl<I> Dictionary<I>
 where
     I: Hash + Eq,
 {
+    /// Instantiates an empty `Dictionary`.
     pub fn new() -> Self {
         Self { 
             words: FastMap::new(), 
@@ -47,6 +53,7 @@ where
         }
     }
 
+    /// Instantiates an empty `Dictionary` pre-allocated to store a specific quantity of elements.
     pub fn with_capacity(capacity: usize) -> Self {
         Self { 
             words: FastMap::with_capacity(capacity), 
@@ -54,10 +61,12 @@ where
         }
     }
 
+    /// Instantiates a `Dictionary` from a fixed-size array of key-value tuples.
     pub fn from_array<const N: usize>(arr: [(I, Word); N]) -> Self {
         <Self as From<[(I, Word); N]>>::from(arr)
     }
 
+    /// Instantiates a `Dictionary` from an owned vector of key-value tuples.
     pub fn from_vec(vec: Vec<(I, Word)>) -> Self {
         Self {
             words: FastMap::from_iter(vec.into_iter()),
@@ -67,6 +76,7 @@ where
 }
 
 impl<I, M> Dictionary<I, M> {
+    /// Returns the total number of words.
     pub fn len(&self) -> usize 
     where
         M: Len
@@ -74,6 +84,15 @@ impl<I, M> Dictionary<I, M> {
         Len::len(self)
     }
 
+    /// Returns `true` if the dictionary is empty.
+    pub fn is_empty(&self) -> bool
+    where
+        M: Len
+    {
+        self.len() == 0
+    }
+
+    /// Returns a reference to the [`Word`] matching the provided key, or [`None`] if not found.
     pub fn get(&self, key: &I) -> Option<&Word> 
     where
         M: for<'a> Get<&'a I>,
@@ -82,6 +101,7 @@ impl<I, M> Dictionary<I, M> {
         Get::get(self, key)
     }
 
+    /// Checks if a word matching the target key exists in the collection.
     pub fn contains(&self, key: &I) -> bool
     where
         M: for<'a> Get<&'a I>,
@@ -90,6 +110,7 @@ impl<I, M> Dictionary<I, M> {
         Get::contains(self, key)
     }
 
+    /// Returns a reference tuple matching both the key and its assigned [`Word`], or [`None`] if missing.
     pub fn get_key_value(&self, key: &I) -> Option<(&I, &Word)>
     where
         M: for<'a> GetKeyValue<&'a I>, 
@@ -99,6 +120,7 @@ impl<I, M> Dictionary<I, M> {
         GetKeyValue::get_key_value(self, key)
     }
 
+    /// Returns a mutable reference to the [`Word`] matching the provided key, or [`None`] if not found.
     pub fn get_mut(&mut self, key: &I) -> Option<&mut Word>
     where
         M: for<'a> GetMut<&'a I>,
@@ -108,6 +130,9 @@ impl<I, M> Dictionary<I, M> {
         GetMut::get_mut(self, key)
     }
 
+    /// Inserts a key-value entry into the dictionary. 
+    ///
+    /// If the key already exists, the entry is overwritten and its old [`Word`] payload is returned.
     pub fn insert(&mut self, key: I, value: Word) -> Option<Word> 
     where
         M: MapInsert<I, Output = Option<Word>>,
@@ -116,6 +141,7 @@ impl<I, M> Dictionary<I, M> {
         MapInsert::insert(self, key, value)
     }
 
+    /// Removes a key-value entry from the dictionary using its identifier, returning the matched [`Word`] if it existed.
     pub fn remove(&mut self, key: &I) -> Option<Word> 
     where
         M: for<'a> Remove<&'a I>,
@@ -124,6 +150,7 @@ impl<I, M> Dictionary<I, M> {
         Remove::remove(self, key)
     }
 
+    /// Clears the dictionary, removing all key-value pairs while preserving allocated space capacity.
     pub fn clear(&mut self)
     where
         M: Clear
@@ -131,6 +158,9 @@ impl<I, M> Dictionary<I, M> {
         Clear::clear(self)
     }
 
+    /// Creates an iterator visiting all key-value entries in arbitrary order. 
+    ///
+    /// Yields references of type `(&I, &Word)`.
     pub fn iter(&self) -> crate::DictIter<'_, I, M>
     where
         M: MapIter,
@@ -140,6 +170,9 @@ impl<I, M> Dictionary<I, M> {
         MapIter::iter(self)
     }
 
+    /// Creates an iterator visiting all key-value entries mutably in arbitrary order.
+    ///
+    /// Yields references of type `(&I, &mut Word)`.
     pub fn iter_mut(&mut self) -> crate::DictIterMut<'_, I, M>
     where
         M: MapIterMut,

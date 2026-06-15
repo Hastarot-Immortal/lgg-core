@@ -9,6 +9,9 @@ use cc_traits::{
 
 use std::marker::PhantomData;
 
+/// An iterator over shared references to the [`Word`] values stored in a [`Dictionary`].
+///
+/// This struct is created by the [`words`](Dictionary::words) method on [`Dictionary`].
 pub struct Words<'a, M: Iter + 'a> {
     inner: M::Iter<'a>,
 }
@@ -29,6 +32,7 @@ where
     M: Iter,
     for<'a> M::ItemRef<'a>: Into<&'a Word>,
 {
+		/// Returns an iterator yielding immutable references to all [`Word`] tokens stored in this dictionary.
     pub fn words(&self) -> Words<'_, M> {
         Words {
             inner: self.words.iter(),
@@ -36,6 +40,9 @@ where
     }
 }
 
+/// An iterator over mutable references to the [`Word`] values stored in a [`Dictionary`].
+///
+/// This struct is created by the [`words_mut`](Dictionary::words_mut) method on [`Dictionary`].
 pub struct WordsMut<'a, M: IterMut + 'a> {
     inner: M::IterMut<'a>,
 }
@@ -56,6 +63,7 @@ where
 	M: IterMut,
 	for<'a> M::ItemMut<'a>: Into<&'a mut Word>,
 {
+	/// Returns an iterator yielding mutable references to all [`Word`] tokens stored in this dictionary.
 	pub fn words_mut(&mut self) -> WordsMut<'_, M> {
 		WordsMut {
 			inner: self.words.iter_mut(),
@@ -63,6 +71,9 @@ where
 	}
 }
 
+/// An iterator over shared key-value pairs `(&I, &Word)` stored in a [`Dictionary`].
+///
+/// This struct is created by the [`iter`](MapIter::iter) implementation on [`Dictionary`].
 pub struct DictIter<'a, I: 'a, M: MapIter + 'a> {
 	inner: M::Iter<'a>,
 	_id_type: PhantomData<I>,
@@ -90,6 +101,7 @@ where
 {
 	type Iter<'a> = DictIter<'a, I, M> where Self: 'a, M: 'a;
 
+	/// Creates an iterator visiting all key-value pairings in arbitrary order.
 	fn iter(&self) -> Self::Iter<'_> {
 		DictIter {
 			inner: self.words.iter(),
@@ -98,6 +110,9 @@ where
 	}
 }
 
+/// An iterator over mutable key-value pairs `(&I, &mut Word)` stored in a [`Dictionary`].
+///
+/// This struct is created by the [`iter_mut`](MapIterMut::iter_mut) implementation on [`Dictionary`].
 pub struct DictIterMut<'a, I: 'a, M: MapIterMut + 'a> {
 	inner: M::IterMut<'a>,
 	_id_type: PhantomData<I>,
@@ -124,7 +139,8 @@ where
     for<'a> M::ItemMut<'a>: Into<&'a mut Word>,
 {
 	type IterMut<'a> = DictIterMut<'a, I, M> where Self: 'a, M: 'a;
-
+	
+	/// Creates an iterator visiting all key-value pairings in arbitrary order, allowing modification of the underlying words.
 	fn iter_mut(&mut self) -> Self::IterMut<'_> {
 		DictIterMut {
 			inner: self.words.iter_mut(),
