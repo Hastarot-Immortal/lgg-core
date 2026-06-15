@@ -1,3 +1,27 @@
+//! Phonetic alphabet framework and sequence coordinate lookups.
+//!
+//! This module provides the central [`Alphabet`] pool struct along with components 
+//! for polymorphic safe array lookups (`index`), item iteration, and acoustic 
+//! classification masking (`iter`).
+//!
+//! # Examples
+//!
+//! ```
+//! use lgg_core::alphabet::{Alphabet, Indexes, VoiceLevelSet};
+//! use lgg_core::{Sound, VoiceLevel};
+//!
+//! // Instantiating a framework pool of phonetic sounds
+//! let alphabet = Alphabet::from([
+//!     Sound::vowel('a'),
+//!     Sound::sonorant('m'),
+//!     Sound::voiceless('p'),
+//! ]);
+//!
+//! // Isolate specific coordinates using an acoustic classification mask
+//! let consonants: Indexes = alphabet.indexes_by_voice_level(VoiceLevelSet::CONSONANTS);
+//! assert_eq!(consonants.len(), 2);
+//! ```
+
 pub mod alphabet;
 pub mod iter;
 pub mod index;

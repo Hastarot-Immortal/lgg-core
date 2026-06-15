@@ -22,9 +22,9 @@ pub struct Sound {
 
 impl Sound {
     /// Creates a new `Sound` from a type that guarantees a infallible conversion.
-    pub fn from<I: AsSound>(symbol: I, level: VoiceLevel) -> Self {
+    pub fn from<I: AsBytesForSound>(symbol: I, level: VoiceLevel) -> Self {
         Self {
-            bytes: symbol.as_sound(),
+            bytes: symbol.as_bytes_for_sound(),
             level,
         }
     }
@@ -34,15 +34,15 @@ impl Sound {
     /// # Errors
     ///
     /// Returns [`TryAsSoundError`] if the `symbol` is too large.
-    pub fn try_from<I: TryAsSound>(symbol: I, level: VoiceLevel) -> Result<Self, TryAsSoundError> {
+    pub fn try_from<I: TryAsBytesForSound>(symbol: I, level: VoiceLevel) -> Result<Self, TryAsSoundError> {
         Ok(Self {
-            bytes: symbol.try_as_sound()?,
+            bytes: symbol.try_as_bytes_for_sound()?,
             level,
         })
     }
 
     /// Creates a new sound with a [`VoiceLevel::Vowel`] classification.
-    pub fn vowel<I: AsSound>(symbol: I) -> Self {
+    pub fn vowel<I: AsBytesForSound>(symbol: I) -> Self {
         Self::from(symbol, VoiceLevel::Vowel)
     }
 
@@ -51,12 +51,12 @@ impl Sound {
     /// # Errors
     ///
     /// Returns [`TryAsSoundError`] if the `symbol` is too large.
-    pub fn try_vowel<I: TryAsSound>(symbol: I) -> Result<Self, TryAsSoundError> {
+    pub fn try_vowel<I: TryAsBytesForSound>(symbol: I) -> Result<Self, TryAsSoundError> {
         Self::try_from(symbol, VoiceLevel::Vowel)
     }
 
     /// Creates a new sound with a [`VoiceLevel::Sonorant`] classification.
-    pub fn sonorant<I: AsSound>(symbol: I) -> Self {
+    pub fn sonorant<I: AsBytesForSound>(symbol: I) -> Self {
         Self::from(symbol, VoiceLevel::Sonorant)
     }
 
@@ -65,12 +65,12 @@ impl Sound {
     /// # Errors
     ///
     /// Returns [`TryAsSoundError`] if the `symbol` is too large.
-    pub fn try_sonorant<I: TryAsSound>(symbol: I) -> Result<Self, TryAsSoundError> {
+    pub fn try_sonorant<I: TryAsBytesForSound>(symbol: I) -> Result<Self, TryAsSoundError> {
         Self::try_from(symbol, VoiceLevel::Sonorant)
     }
 
     /// Creates a new sound with a [`VoiceLevel::Voice`] classification.
-    pub fn voice<I: AsSound>(symbol: I) -> Self {
+    pub fn voice<I: AsBytesForSound>(symbol: I) -> Self {
         Self::from(symbol, VoiceLevel::Voice)
     }
 
@@ -79,12 +79,12 @@ impl Sound {
     /// # Errors
     ///
     /// Returns [`TryAsSoundError`] if the `symbol` is too large.
-    pub fn try_voice<I: TryAsSound>(symbol: I) -> Result<Self, TryAsSoundError> {
+    pub fn try_voice<I: TryAsBytesForSound>(symbol: I) -> Result<Self, TryAsSoundError> {
         Self::try_from(symbol, VoiceLevel::Voice)
     }
 
     /// Creates a new sound with a [`VoiceLevel::Creaky`] classification.
-    pub fn creaky<I: AsSound>(symbol: I) -> Self {
+    pub fn creaky<I: AsBytesForSound>(symbol: I) -> Self {
         Self::from(symbol, VoiceLevel::Creaky)
     }
 
@@ -93,12 +93,12 @@ impl Sound {
     /// # Errors
     ///
     /// Returns [`TryAsSoundError`] if the `symbol` is too large.
-    pub fn try_creaky<I: TryAsSound>(symbol: I) -> Result<Self, TryAsSoundError> {
+    pub fn try_creaky<I: TryAsBytesForSound>(symbol: I) -> Result<Self, TryAsSoundError> {
         Self::try_from(symbol, VoiceLevel::Creaky)
     }
 
     /// Creates a new sound with a [`VoiceLevel::Breathy`] classification.
-    pub fn breathy<I: AsSound>(symbol: I) -> Self {
+    pub fn breathy<I: AsBytesForSound>(symbol: I) -> Self {
         Self::from(symbol, VoiceLevel::Breathy)
     }
 
@@ -107,12 +107,12 @@ impl Sound {
     /// # Errors
     ///
     /// Returns [`TryAsSoundError`] if the `symbol` is too large.
-    pub fn try_breathy<I: TryAsSound>(symbol: I) -> Result<Self, TryAsSoundError> {
+    pub fn try_breathy<I: TryAsBytesForSound>(symbol: I) -> Result<Self, TryAsSoundError> {
         Self::try_from(symbol, VoiceLevel::Breathy)
     }
 
     /// Creates a new sound with a [`VoiceLevel::Voiceless`] classification.
-    pub fn voiceless<I: AsSound>(symbol: I) -> Self {
+    pub fn voiceless<I: AsBytesForSound>(symbol: I) -> Self {
         Self::from(symbol, VoiceLevel::Voiceless)
     }
 
@@ -121,7 +121,7 @@ impl Sound {
     /// # Errors
     ///
     /// Returns [`TryAsSoundError`] if the `symbol` is too large.
-    pub fn try_voiceless<I: TryAsSound>(symbol: I) -> Result<Self, TryAsSoundError> {
+    pub fn try_voiceless<I: TryAsBytesForSound>(symbol: I) -> Result<Self, TryAsSoundError> {
         Self::try_from(symbol, VoiceLevel::Voiceless)
     }
 
@@ -164,7 +164,7 @@ macro_rules! impl_partial_eq {
     ($other:ty) => {
         impl PartialEq<$other> for Sound {
             fn eq(&self, other: &$other) -> bool {
-                other.try_as_sound().is_ok_and(|bytes| bytes == self.bytes)
+                other.try_as_bytes_for_sound().is_ok_and(|bytes| bytes == self.bytes)
             }
         }
 
@@ -176,7 +176,7 @@ macro_rules! impl_partial_eq {
 
         impl PartialEq<Sound> for $other {
             fn eq(&self, other: &Sound) -> bool {
-                self.try_as_sound().is_ok_and(|bytes| bytes == other.bytes)
+                self.try_as_bytes_for_sound().is_ok_and(|bytes| bytes == other.bytes)
             }
         }
 
@@ -236,8 +236,8 @@ pub enum VoiceLevel {
 ///
 /// assert_eq!(a, "a");
 /// ```
-pub trait AsSound {
-    fn as_sound(&self) -> [u8; 6];
+pub trait AsBytesForSound {
+    fn as_bytes_for_sound(&self) -> [u8; 6];
 }
 
 /// A trait for types that can be converted **optionally** into a [`Sound`] (doesn't consumes the input value).
@@ -256,24 +256,24 @@ pub trait AsSound {
 /// assert_eq!(oue.map(|s| s.to_string()), Ok("øʊə".to_owned()));
 /// assert_eq!(some_kanji, Err(TryAsSoundError));
 /// ```
-pub trait TryAsSound {
-    fn try_as_sound(&self) -> Result<[u8; 6], TryAsSoundError>; 
+pub trait TryAsBytesForSound {
+    fn try_as_bytes_for_sound(&self) -> Result<[u8; 6], TryAsSoundError>; 
 }
 
-impl AsSound for Sound {
-    fn as_sound(&self) -> [u8; 6] {
+impl AsBytesForSound for Sound {
+    fn as_bytes_for_sound(&self) -> [u8; 6] {
         self.bytes
     }
 }
 
-impl TryAsSound for Sound {
-    fn try_as_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
+impl TryAsBytesForSound for Sound {
+    fn try_as_bytes_for_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
         Ok(self.bytes.clone())
     }
 }
 
-impl AsSound for char {
-    fn as_sound(&self) -> [u8; 6] {
+impl AsBytesForSound for char {
+    fn as_bytes_for_sound(&self) -> [u8; 6] {
         let mut res = [0; 6];
         for (i, b) in self.encode_utf8(&mut [0; 4]).bytes().enumerate() {
             res[i] = b
@@ -282,32 +282,32 @@ impl AsSound for char {
     }
 }
 
-impl TryAsSound for char {
-    fn try_as_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
-        Ok(self.as_sound())
+impl TryAsBytesForSound for char {
+    fn try_as_bytes_for_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
+        Ok(self.as_bytes_for_sound())
     }
 }
 
-impl AsSound for [char; 1] {
-    fn as_sound(&self) -> [u8; 6] {
-        self[0].as_sound()
+impl AsBytesForSound for [char; 1] {
+    fn as_bytes_for_sound(&self) -> [u8; 6] {
+        self[0].as_bytes_for_sound()
     }
 }
 
-impl TryAsSound for [char; 1] {
-    fn try_as_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
-        Ok(self.as_sound())
+impl TryAsBytesForSound for [char; 1] {
+    fn try_as_bytes_for_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
+        Ok(self.as_bytes_for_sound())
     }
 }
 
-impl TryAsSound for str {
-    fn try_as_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
-        (&self).try_as_sound()
+impl TryAsBytesForSound for str {
+    fn try_as_bytes_for_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
+        (&self).try_as_bytes_for_sound()
     }
 }
 
-impl TryAsSound for &str {
-    fn try_as_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
+impl TryAsBytesForSound for &str {
+    fn try_as_bytes_for_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
         if self.len() > 6 {
             return Err(TryAsSoundError);
         }
@@ -319,43 +319,43 @@ impl TryAsSound for &str {
     }
 }
 
-impl TryAsSound for [char] {
-    fn try_as_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
-        (&self).try_as_sound()
+impl TryAsBytesForSound for [char] {
+    fn try_as_bytes_for_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
+        (&self).try_as_bytes_for_sound()
     }
 }
 
-impl TryAsSound for &[char] {
-    fn try_as_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
-        self.iter().collect::<String>().try_as_sound()
+impl TryAsBytesForSound for &[char] {
+    fn try_as_bytes_for_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
+        self.iter().collect::<String>().try_as_bytes_for_sound()
     }
 }
 
-impl TryAsSound for String {
-    fn try_as_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
-        self.as_str().try_as_sound()
+impl TryAsBytesForSound for String {
+    fn try_as_bytes_for_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
+        self.as_str().try_as_bytes_for_sound()
     }
 }
 
-macro_rules! impl_try_as_sound_for_array {
+macro_rules! impl_try_as_bytes_for_sound_for_array {
     ($($size: literal),*) => {
         $(
-            impl TryAsSound for [char; $size] {
-                fn try_as_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
-                    self.as_slice().try_as_sound()
+            impl TryAsBytesForSound for [char; $size] {
+                fn try_as_bytes_for_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
+                    self.as_slice().try_as_bytes_for_sound()
                 }
             }
 
-            impl TryAsSound for &[char; $size] {
-                fn try_as_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
-                    self.as_slice().try_as_sound()
+            impl TryAsBytesForSound for &[char; $size] {
+                fn try_as_bytes_for_sound(&self) -> Result<[u8; 6], TryAsSoundError> {
+                    self.as_slice().try_as_bytes_for_sound()
                 }
             }
         )*
     };
 }
 
-impl_try_as_sound_for_array!(2, 3, 4, 5, 6);
+impl_try_as_bytes_for_sound_for_array!(2, 3, 4, 5, 6);
 
 /// The error type returned when a value is too large to be safely allocated inside a [`Sound`].
 /// 

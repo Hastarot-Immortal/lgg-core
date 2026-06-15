@@ -1,6 +1,6 @@
 use crate::{
 	Sound, 
-	sound::TryAsSound,
+	sound::TryAsBytesForSound,
 	alphabet::{
 		Alphabet, 
 		iter::Indexes,
@@ -16,14 +16,17 @@ mod sealed {
 	impl<'a> Sealed for &'a usize {}
 	impl Sealed for Option<usize> {}
 	impl Sealed for Option<&usize> {}
-	impl<K> Sealed for K where K: TryAsSound {}
+	impl<K> Sealed for K where K: TryAsBytesForSound {}
 	impl Sealed for Indexes {}
 	impl Sealed for Vec<usize> {}
 	impl<'a> Sealed for &'a [usize] {}
-	impl<K> Sealed for Vec<K> where K: TryAsSound {}
+	impl<K> Sealed for Vec<K> where K: TryAsBytesForSound {}
 }
 
 /// A sealed trait powering polymorphic immutable lookups inside an [`Alphabet`].
+///
+/// It allows querying the alphabet using raw numeric positions, optional values, 
+/// characters (`char`), or string tokens (`&str`).
 pub trait AlphabetIndex: sealed::Sealed {
 	/// The mapped resulting reference type produced by an indexing operation.
 	type Output;
@@ -92,7 +95,7 @@ impl AlphabetIndex for Option<&usize> {
 
 impl<K> AlphabetIndex for K
 where 
-	K: TryAsSound, 
+	K: TryAsBytesForSound, 
 {
 	type Output = Sound;
 
@@ -107,13 +110,15 @@ where
 }
 
 /// A sealed trait powering slice extraction, bulk cloning, and complex sound collection queries.
+///
+/// It supports retrieving multiple sounds at once via vectors, slices, or [`Indexes`] trackers.
 pub trait AlphabetIndexOwned: sealed::Sealed {
 	/// The owned collection type synthesized from evaluating this index pattern against the alphabet.
 	type Owned;
 
 	/// Evaluates the sequence criteria against the alphabet pool, reconstructing an owned copy of matched items.
 	///
-  /// Returns [`None`] if any fragment inside the collective query sequence fails evaluation metrics.
+	/// Returns [`None`] if any fragment inside the collective query sequence fails evaluation metrics.
 	fn get_owned(self, alphabet: &Alphabet) -> Option<Self::Owned>;
 }
 
@@ -163,7 +168,7 @@ impl AlphabetIndexOwned for Vec<usize> {
 
 impl<K> AlphabetIndexOwned for Vec<K> 
 where 
-	K: TryAsSound, 
+	K: TryAsBytesForSound, 
 {
 	type Owned = Vec<Sound>;
 

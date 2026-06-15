@@ -2,8 +2,26 @@ use crate::Word;
 
 /// Defines a rule-based transformer that modifies a [`Word`] structure in-place.
 ///
-/// Implementors can choose to mutate words dynamically via a method (`apply`) 
-/// or using zero-overhead static definitions (`apply_static`) when state is not required.
+/// Implementors can choose to mutate words dynamically via an instance method (`apply`) 
+/// or use zero-overhead static definitions (`apply_static`) when state or runtime configuration 
+/// is not required.
+///
+/// # Examples
+///
+/// Using a stateless rule to modify a word:
+/// ```
+/// use lgg_core::{Rule, Word, PartOfSpeech, Sound};
+/// # struct SwapFirstTwo;
+/// # impl Rule for SwapFirstTwo {
+/// #     fn apply(&self, word: &mut Word) { word.swap(0, 1); }
+/// #     fn apply_static(word: &mut Word) { word.swap(0, 1); }
+/// # }
+///
+/// let mut word = Word::from_slice(&[Sound::vowel('a'), Sound::sonorant('m')], PartOfSpeech::Noun);
+/// SwapFirstTwo::apply_static(&mut word);
+/// 
+/// assert_eq!(word.to_string(), "ma");
+/// ```
 pub trait Rule {
 	/// Applies the mutation rule in-place to a specific mutable reference of a [`Word`].
 	fn apply(&self, word: &mut Word);
@@ -12,11 +30,44 @@ pub trait Rule {
 	fn apply_static(word: &mut Word) where Self: Sized;
 
 	/// Iterates through a dynamically dispatched sequence of mutable words, applying this rule's instance method to each.
+	///
+	/// ```
+	/// use lgg_core::{Rule, Word, PartOfSpeech};
+	/// 
+	/// let mut words = vec![
+	///     Word::from_array([], PartOfSpeech::Noun),
+	///     Word::from_array([], PartOfSpeech::Verb),
+	/// ];
+	/// # struct MockRule;
+	/// # impl Rule for MockRule {
+	/// #     fn apply(&self, w: &mut Word) {}
+	/// #     fn apply_static(w: &mut Word) {}
+	/// # }
+	/// 
+	/// let rule = MockRule;
+	/// rule.apply_iter(&mut words.iter_mut());
+	/// ```
 	fn apply_iter<'a>(&self, words: &mut dyn Iterator<Item = &'a mut Word>) {
 		words.for_each(|word| self.apply(word));
 	}
 	
 	/// Iterates through a statically dispatched sequence of mutable words, applying this rule's static method to each.
+	///
+	/// ```
+	/// use lgg_core::{Rule, Word, PartOfSpeech, Dictionary};
+	/// # struct MockRule;
+	/// # impl Rule for MockRule {
+	/// #     fn apply(&self, w: &mut Word) {}
+	/// #     fn apply_static(w: &mut Word) {}
+	/// # }
+	/// 
+	/// let mut dict = Dictionary::from_vec(vec![
+	///     (1, Word::from_array([], PartOfSpeech::Noun)),
+	///     (2, Word::from_array([], PartOfSpeech::Adj)),
+	/// ]);
+	/// 
+	/// MockRule::apply_iter_static(&mut dict.iter_mut().map(|(_, w)| w));
+	/// ```
 	fn apply_iter_static<'a, I>(words: &mut I) 
 	where 
 		I: Iterator<Item = &'a mut Word>,
@@ -28,8 +79,8 @@ pub trait Rule {
 
 /// A declarative macro designed to generate [`Rule`] struct definitions smoothly.
 ///
-/// This macro lets you construct stateless rules from closures, pass distinct logic pathways 
-/// for dynamic and static contexts, or build rules containing stateful properties.
+/// This macro lets you construct stateless rules from functions or closures, pass distinct 
+/// logic pathways for dynamic and static contexts, or build rules containing stateful properties.
 ///
 /// # Examples
 ///

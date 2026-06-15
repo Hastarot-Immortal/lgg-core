@@ -136,7 +136,7 @@ impl<'a> IntoIterator for &'a mut Indexes {
 /// vl_set &= [Sonorant, Vowel, Voice];
 /// vl_set |= Voiceless;
 ///
-/// assert_eq!(!vl_set,  VoiceLevelSet::from([Breathy, Creaky, Sonorant]));
+/// assert_eq!(!vl_set, VoiceLevelSet::from([Breathy, Creaky, Sonorant]));
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct VoiceLevelSet(pub(crate) u8);
@@ -145,6 +145,7 @@ impl VoiceLevelSet {
     /// A preset set containing every single available variant classification flag inside [`VoiceLevel`].
     pub const ALL: VoiceLevelSet = VoiceLevelSet(0b11_1111);
 
+    /// A preset set containing standard consonant vocal profiles.
     pub const CONSONANTS: VoiceLevelSet = VoiceLevelSet(0b1_1111);
 }
 

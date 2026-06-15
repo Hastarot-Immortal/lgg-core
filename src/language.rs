@@ -143,7 +143,7 @@ pub trait LanguageBuilder<T, M=DefaultMap<T, Word>> {
     /// # Examples
     ///
     /// ```
-    /// use lgg_core::{Language, LanguageBuilder, PartOfSpeech};
+    /// use lgg_core::{Language, language::LanguageBuilder, PartOfSpeech};
     /// # struct MyBuilder;
     /// # impl LanguageBuilder<String> for MyBuilder {
     /// #     fn new() -> Self { MyBuilder }
