@@ -1,14 +1,22 @@
 use crate::Word;
 
+/// Defines a rule-based transformer that modifies a [`Word`] structure in-place.
+///
+/// Implementors can choose to mutate words dynamically via a method (`apply`) 
+/// or using zero-overhead static definitions (`apply_static`) when state is not required.
 pub trait Rule {
+	/// Applies the mutation rule in-place to a specific mutable reference of a [`Word`].
 	fn apply(&self, word: &mut Word);
 
+	/// Applies a static, stateless variant of the mutation rule to a given [`Word`].
 	fn apply_static(word: &mut Word) where Self: Sized;
 
+	/// Iterates through a dynamically dispatched sequence of mutable words, applying this rule's instance method to each.
 	fn apply_iter<'a>(&self, words: &mut dyn Iterator<Item = &'a mut Word>) {
 		words.for_each(|word| self.apply(word));
 	}
 	
+	/// Iterates through a statically dispatched sequence of mutable words, applying this rule's static method to each.
 	fn apply_iter_static<'a, I>(words: &mut I) 
 	where 
 		I: Iterator<Item = &'a mut Word>,
@@ -18,6 +26,32 @@ pub trait Rule {
 	}
 }
 
+/// A declarative macro designed to generate [`Rule`] struct definitions smoothly.
+///
+/// This macro lets you construct stateless rules from closures, pass distinct logic pathways 
+/// for dynamic and static contexts, or build rules containing stateful properties.
+///
+/// # Examples
+///
+/// ## 1. A Simple Stateless Rule
+/// ```
+/// use lgg_core::{rule, Rule, Word};
+/// 
+/// rule!(SwapRule, move |word: &mut Word| word.swap(0, 1));
+/// ```
+///
+/// ## 2. A State-bearing Configurable Rule
+/// ```
+/// use lgg_core::{rule, Rule, Word};
+///
+/// rule!(
+///     SoundRightRotation { shift_amount: usize },
+///     move |word: &mut Word| { word.rotate_right(1); },
+///     move |this: &SoundRightRotation, word: &mut Word| {
+///         word.rotate_right(this.shift_amount);
+///     }
+/// );
+/// ```
 #[macro_export]
 macro_rules! rule {
 	($name: ident, $func: expr) => {
