@@ -133,10 +133,6 @@ impl<I, M> DerefMut for Language<I, M> {
 /// Implementors can use this trait to define custom phonetic synthesis, generation pipelines,
 /// or stateful procedural language builders.
 pub trait LanguageBuilder<T, M=DefaultMap<T, Word>> {
-
-    /// Instantiates an empty configuration state for the builder.
-    fn new() -> Self;
-
     /// Consumes or reads the specified abstract items, running phonetic synthesis or mutation pipelines, 
     /// and constructs a fully populated [`Language`].
     ///
@@ -145,12 +141,12 @@ pub trait LanguageBuilder<T, M=DefaultMap<T, Word>> {
     /// ```
     /// use lgg_core::{Language, language::LanguageBuilder, PartOfSpeech};
     /// # struct MyBuilder;
+    /// #
     /// # impl LanguageBuilder<String> for MyBuilder {
-    /// #     fn new() -> Self { MyBuilder }
     /// #     fn build<U: Into<String>, I: IntoIterator<Item=(U, PartOfSpeech)>>(&mut self, words: I) -> Language<String> { Language::new() }
     /// # }
     ///
-    /// let mut builder = MyBuilder::new();
+    /// let mut builder = MyBuilder;
     /// let lang = builder.build([("water", PartOfSpeech::Noun)]);
     /// ```
     fn build< U: Into<T>, I: IntoIterator<Item=(U, PartOfSpeech)>>(&mut self, words: I) -> Language<T, M>;
@@ -253,14 +249,16 @@ mod language_test {
         rng: MockRng,
     }
 
-    impl LanguageBuilder<String> for TestLB {
+    impl TestLB {
         fn new() -> Self {
             Self {
                 rules: vec![],
                 rng: MockRng(0),
             }
         }
+    }
 
+    impl LanguageBuilder<String> for TestLB {
         fn build< U: Into<String>, I: IntoIterator<Item=(U, PartOfSpeech)>>(&mut self, words: I) -> Language<String> {
             let mut language = Language::new();
 
